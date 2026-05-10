@@ -7,7 +7,7 @@ require_once __DIR__ . '/datos/conexionBD.php';
 require_once __DIR__ . '/datos/helpers_gestion_bd.php';
 
 // 2. Cargamos el controlador
-require_once __DIR__ . '/controllers/MainController.php';
+require_once __DIR__ . '/Controladores/InicioUsuario.php';
 
 // 3. Ejecutamos
 $app = new MainController();

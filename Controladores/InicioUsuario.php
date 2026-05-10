@@ -12,7 +12,7 @@ class MainController {
         }
 
         try {
-            $pdo = obtenerConexionPdo(); 
+            $pdo = ConexionBaseDatos::obtenerConexionPDO();
         } catch (Throwable $e) {
             die("Error: No se pudo conectar a la base de datos. " . $e->getMessage());
         }

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../Modelos/conexionBD.php';
+require_once __DIR__ . '/../datos/conexionBD.php';
 
 $formato = $_GET['formato'] ?? 'txt';
 
 try {
-    $conexion = obtenerConexionPdo();
+    $conexion = ConexionBaseDatos::obtenerConexionPDO();
 
     $sql = "SELECT e.nombre as nombre_empleado, e.apellido, e.codigo_empleado, 
                    d.nombre_departamento, emp.nombre as nombre_empresa
