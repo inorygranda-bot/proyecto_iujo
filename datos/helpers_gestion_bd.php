@@ -442,3 +442,4 @@ class AyudanteBaseDatos
         );
         $st->execute(['c' => $clave, 'v' => $json]);
     }
+}
