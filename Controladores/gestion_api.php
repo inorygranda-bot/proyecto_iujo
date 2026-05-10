@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/conexionBD.php';
+require_once __DIR__ . '/../Modelos/conexionBD.php';
 require_once __DIR__ . '/helpers_gestion_bd.php';
 
 /**

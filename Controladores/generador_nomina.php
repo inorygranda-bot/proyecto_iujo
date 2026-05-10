@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../datos/conexionBD.php';
+require_once __DIR__ . '/../Modelos/conexionBD.php';
 
 $formato = $_GET['formato'] ?? 'txt';
 

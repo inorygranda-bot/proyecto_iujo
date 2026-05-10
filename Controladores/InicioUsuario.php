@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../datos/conexionBD.php';
-require_once __DIR__ . '/../datos/helpers_gestion_bd.php';
+require_once __DIR__ . '/../Modelos/conexionBD.php';
+require_once __DIR__ . '/../Modelos/helpers_gestion_bd.php';
 require_once __DIR__ . '/../Modelos/usuarios.php';
 
 class MainController {
