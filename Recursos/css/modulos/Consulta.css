@@ -1,0 +1,747 @@
+/* consulta: layout general versión centrada y compacta */
+#Consulta {
+    /* contenedor principal con ancho maximo para evitar estiramiento */
+    width: 100%;
+    max-width: 1050px; 
+    /* centrado automatico y separacion vertical */
+    margin: 20px auto; 
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* cabecera con acciones */
+.CabeceraConsulta {
+    /* distribucion flexible de elementos en la cabecera */
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 20px;
+    /* estilo visual con degradado y bordes redondeados */
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #2c5f8d;
+    box-shadow: 0 4px 12px rgba(44, 95, 141, 0.06);
+}
+
+.CabeceraConsulta__titulo {
+    /* tipografia para el titulo principal de la consulta */
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #2c5f8d;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+.CabeceraConsulta__sub {
+    /* texto secundario o descripcion en la cabecera */
+    margin: 0;
+    font-size: 0.85rem;
+    color: #64748b;
+    max-width: 420px;
+    line-height: 1.4;
+}
+
+.CabeceraConsulta__acciones {
+    /* contenedor para botones de accion rapida */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.BtnAccionRapida {
+    /* base para botones de accion con iconos */
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    border: none;
+    /* transicion suave para efectos de hover */
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s;
+    color: #fff;
+}
+
+.BtnAccionRapida i {
+    /* ajuste de tamaño y transparencia para iconos dentro de botones */
+    font-size: 0.9rem;
+    opacity: 0.95;
+}
+
+.BtnAccionRapida--depto {
+    /* variante de boton para departamentos */
+    background: linear-gradient(145deg, #2c5f8d 0%, #1e4976 100%);
+    box-shadow: 0 4px 10px rgba(44, 95, 141, 0.25);
+}
+
+.BtnAccionRapida--emp {
+    /* variante de boton para empresas */
+    background: linear-gradient(145deg, #1e4976 0%, #2c5f8d 100%);
+    box-shadow: 0 4px 10px rgba(30, 73, 118, 0.2);
+}
+
+.BtnAccionRapida:hover {
+    /* efecto al pasar el mouse por encima de los botones */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(44, 95, 141, 0.2);
+}
+
+.BtnAccionRapida:disabled {
+    /* estado visual para botones deshabilitados */
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.ConsultaLayout {
+    /* estructura que divide los paneles izquierdo y derecho */
+    display: flex;
+    flex-direction: row;
+    gap: 14px;
+    align-items: stretch;
+    flex: 1;
+    min-height: 0;
+}
+
+/* panel izquierdo más estrecho */
+.PanelIzquierdo {
+    /* configuracion del panel lateral fijo */
+    width: 240px;
+    min-width: 220px;
+    flex-shrink: 0;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(44, 95, 141, 0.06);
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #2c5f8d;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.PanelIzquierdo__head {
+    /* encabezado interno del panel izquierdo */
+    padding: 12px 16px;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+    border-bottom: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+.PanelIzquierdo__head h3 {
+    /* estilo del titulo de seccion en el panel */
+    color: #2c5f8d;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    margin: 0 0 2px;
+    letter-spacing: 0.5px;
+}
+
+.PanelIzquierdo__head p {
+    /* texto pequeño bajo el titulo del panel */
+    margin: 0;
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.ListaEmpresas {
+    /* contenedor con scroll para el listado de empresas */
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px;
+    max-height: min(55vh, 480px);
+    overflow-y: auto;
+    flex: 1;
+}
+
+.EmpresaListaFila {
+    /* fila individual dentro de la lista de empresas */
+    display: flex;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+.BotonEmpresaLista {
+    /* estilo de los items clickeables en el panel lateral */
+    width: 100%;
+    padding: 10px 12px;
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.82rem;
+    transition: background 0.2s, color 0.2s, transform 0.15s, border-color 0.2s;
+}
+
+.BotonEmpresaLista:hover {
+    /* efecto visual de seleccion/foco al pasar el mouse */
+    background: #2c5f8d;
+    color: #ffffff;
+    border-color: #2c5f8d;
+    transform: translateX(4px);
+}
+
+/* panel derecho más compacto */
+.PanelDerecho {
+    /* area principal de contenido donde se muestran los datos */
+    flex: 1;
+    min-width: 0;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(44, 95, 141, 0.06);
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #2c5f8d;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 350px;
+    position: relative;
+}
+
+/* botón volver idéntico al de registro */
+.BotonVolverConsulta {
+    /* boton para regresar a la vista anterior */
+    background: transparent;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    padding: 5px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.BotonVolverConsulta:hover {
+    /* cambio de color para el boton volver al pasar el mouse */
+    background: #f1f5f9;
+    color: #2c5f8d;
+    border-color: #cbd5e1;
+}
+
+.EnlaceVolverConsulta {
+    /* estilo para enlaces tipo texto que funcionan como volver */
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #2c5f8d;
+    text-decoration: none;
+    padding: 6px 4px;
+    border-bottom: 2px solid transparent;
+}
+
+.EnlaceVolverConsulta:hover {
+    /* subrayado visual animado al pasar el mouse */
+    border-bottom-color: #2c5f8d;
+}
+
+.BarraNavegacion {
+    /* barra superior del panel derecho con ruta y controles */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+
+.RutaNavegacion {
+    /* contenedor de breadcrumbs o indicadores de ubicacion */
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+}
+
+.RutaNavegacion span {
+    /* texto base de la navegacion */
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+#NombreEmpresa,
+#NombreDepto {
+    /* resalte para los nombres actuales en la navegacion */
+    font-weight: 800;
+    color: #2c5f8d;
+    text-transform: uppercase;
+}
+
+.AreaTabla {
+    /* contenedor de la tabla con scroll independiente */
+    flex: 1;
+    overflow: auto;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    min-height: 0;
+}
+
+.TablaDatos {
+    /* configuracion base de la tabla de datos */
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+.TablaDatos__vacio {
+    /* estilo para el mensaje cuando no hay registros */
+    text-align: center;
+    color: #94a3b8;
+    padding: 20px 16px !important;
+    font-style: italic;
+}
+
+#CabeceraTabla {
+    /* color de fondo para la cabecera de la tabla */
+    background: #2c5f8d;
+    color: #ffffff;
+}
+
+.TablaDatos th {
+    /* estilo de las celdas de encabezado de tabla */
+    padding: 10px 14px;
+    text-align: left;
+    text-transform: uppercase;
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.5px;
+    /* fijar encabezado durante el scroll vertical */
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.TablaDatos td {
+    /* estilo de las celdas de cuerpo de tabla */
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    background: #fff;
+}
+
+.TablaDatos tbody tr:hover td {
+    /* resalte de fila al pasar el mouse */
+    background-color: #f8fafc;
+}
+
+.BotonAccion {
+    /* botones pequeños de accion dentro de las filas de la tabla */
+    display: inline-block;
+    margin: 2px 4px 2px 0;
+    padding: 4px 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    background: #e2e8f0;
+    color: #475569;
+    transition: background 0.2s, transform 0.15s;
+}
+
+.BotonAccion:hover {
+    /* efecto al interactuar con acciones de tabla */
+    background: #cbd5e1;
+    transform: translateY(-1px);
+}
+
+.PieDetalles {
+    /* seccion inferior con informacion de resumen y botones principales */
+    margin-top: 14px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-left: 4px solid #2c5f8d;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative; /* Added for .SelectorFlotante positioning */
+}
+
+.ContenedorGerente {
+    /* contenedor para el link interactivo del gerente */
+    position: relative;
+    display: inline-block;
+}
+
+.GerenteLink {
+    /* estilo para el nombre del gerente que permite edicion o seleccion */
+    color: #2c5f8d;
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: bold;
+    padding: 2px 5px;
+    transition: background 0.3s;
+}
+
+.GerenteLink:hover {
+    /* efecto hover para el link del gerente */
+    background: #e2e8f0;
+    border-radius: 6px;
+}
+
+.BotonPrincipal {
+    /* boton destacado para acciones primarias como guardar o registrar */
+    background: #2c5f8d;
+    color: #ffffff;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 50px;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: 0.25s;
+    font-size: 0.78rem;
+    letter-spacing: 0.4px;
+}
+
+.BotonPrincipal:hover:not(:disabled) {
+    /* animacion de elevacion en hover */
+    background: #1e4976;
+    transform: translateY(-2px);
+}
+
+.BotonPrincipal:disabled {
+    /* estilo visual cuando la accion principal no esta disponible */
+    background: #cbd5e1;
+    cursor: not-allowed;
+    color: #94a3b8;
+}
+
+.BotonSecundario {
+    /* boton para acciones de menor relevancia o cancelacion */
+    background-color: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    font-size: 0.78rem;
+    transition: 0.2s;
+}
+
+.BotonSecundario:hover {
+    /* cambio sutil de fondo en hover */
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+}
+
+.SelectorFlotante {
+    /* menu desplegable para seleccion rapida */
+    position: absolute;
+    bottom: 44px;
+    left: 0;
+    background-color: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px;
+    z-index: 1000;
+    box-shadow: 0 8px 24px rgba(44, 95, 141, 0.15);
+    min-width: 200px;
+}
+
+#ListaCandidatosGerente {
+    /* listado interno del selector flotante */
+    list-style: none;
+    padding: 0;
+    margin: 8px 0;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+#ListaCandidatosGerente li {
+    /* items individuales dentro del selector flotante */
+    padding: 6px 8px;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.2s;
+    font-size: 0.9rem;
+}
+
+#ListaCandidatosGerente li:hover {
+    /* resalte al pasar por encima de un candidato */
+    background-color: #f8fafc;
+    font-weight: bold;
+}
+
+/* modales html5 dialog */
+.ModalConsulta {
+    /* configuracion del cuadro de dialogo modal */
+    max-width: 420px;
+    width: calc(100vw - 32px);
+    max-height: min(90vh, 700px);
+    padding: 0;
+    border: none;
+    border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(44, 95, 141, 0.2);
+    overflow: hidden;
+    /* centrado absoluto en pantalla */
+    margin: auto; 
+    position: fixed; 
+    top: 0; left: 0; right: 0; bottom: 0;
+}
+
+.ModalConsulta:not([open]) {
+    /* forzar ocultamiento cuando no tiene el atributo open */
+    display: none !important;
+}
+
+.ModalConsulta[open] {
+    /* comportamiento flex cuando esta visible */
+    display: flex;
+    flex-direction: column;
+}
+
+.ModalConsulta::backdrop {
+    /* oscurecimiento del fondo detras del modal */
+    background: rgba(30, 41, 59, 0.4);
+    backdrop-filter: blur(3px);
+}
+
+.ModalConsulta__cabecera {
+    /* encabezado con estilo oscuro degradado para modales */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #2c5f8d 0%, #1e4976 100%);
+    color: #fff;
+}
+
+.ModalConsulta__titulo {
+    /* estilo del titulo dentro del modal */
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ModalConsulta__cerrar {
+    /* boton circular para cerrar el modal */
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.ModalConsulta__cerrar:hover {
+    /* resalte del boton cerrar */
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.ModalConsulta__ayuda {
+    /* texto informativo o de guia dentro del modal */
+    margin: 0;
+    padding: 10px 16px 0;
+    font-size: 0.8rem;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+.ModalConsulta__ayuda code {
+    /* resalte para fragmentos de codigo o ids en la ayuda */
+    font-size: 0.72rem;
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 6px;
+}
+
+.FormModalConsulta {
+    /* contenedor de campos de formulario dentro del modal */
+    padding: 14px 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.FormModalConsulta label {
+    /* estilo de las etiquetas de campo */
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.FormModalConsulta input,
+.FormModalConsulta select,
+.FormModalConsulta textarea {
+    /* estilos unificados para elementos de entrada */
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    font-size: 0.9rem;
+    color: #334155;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.FormModalConsulta input:focus,
+.FormModalConsulta select:focus,
+.FormModalConsulta textarea:focus {
+    /* estado de foco con resalte azul suave */
+    outline: none;
+    border-color: #2c5f8d;
+    box-shadow: 0 0 0 3px rgba(44, 95, 141, 0.1);
+}
+
+.FormModalConsulta__fila {
+    /* disposicion de campos en dos columnas */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.FormModalConsulta__fila--cedula .RifCedulaFila {
+    /* fila especial para campos combinados de documento de identidad */
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.FormModalConsulta__fila--cedula select {
+    /* ajuste de ancho para el selector de nacionalidad */
+    width: auto;
+    min-width: 56px;
+}
+
+.FormModalConsulta__fila--cedula #EmpCedulaNumero {
+    /* el numero de cedula ocupa el resto del espacio disponible */
+    flex: 1;
+}
+
+.ModalConsulta__acciones {
+    /* area de botones en la parte inferior del modal */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 10px;
+    padding-bottom: 4px;
+    flex-shrink: 0;
+    /* fijar acciones al fondo si el formulario tiene scroll */
+    position: sticky;
+    bottom: 0;
+    background: linear-gradient(to top, #fff 85%, rgba(255, 255, 255, 0));
+    border-top: 1px solid #f1f5f9;
+}
+
+@media (max-width: 900px) {
+    /* ajustes para pantallas pequeñas y tablets */
+    .ConsultaLayout {
+        /* cambiar a disposicion vertical */
+        flex-direction: column;
+    }
+
+    .PanelIzquierdo {
+        /* el panel izquierdo toma todo el ancho */
+        width: 100%;
+    }
+
+    .ListaEmpresas {
+        /* reducir altura maxima del listado en moviles */
+        max-height: 220px;
+    }
+
+    .FormModalConsulta__fila {
+        /* formularios pasan a una sola columna */
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ajuste botón rojo de feriados texto negro para legibilidad */
+.BotonAccion[style*="background:#b71c1c"],
+.BotonAccion[style*="background:#ef4444"],
+.BotonAccion[style*="background:red"] {
+    /* forzar visibilidad critica en botones de color rojo */
+    background-color: #ef4444 !important;
+    color: #000000 !important;
+    font-weight: 800;
+    text-shadow: none;
+}
+/* Estilos para el buscador */
+.buscador {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.buscador label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+.buscador input[type="search"] {
+    width: calc(100% - 20px);
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+.resultados {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    max-height: 150px;
+    overflow-y: auto;
+    background-color: #fff;
+    margin-bottom: 10px;
+}
+.resultados .resultado-item {
+    padding: 8px 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+.resultados .resultado-item:last-child {
+    border-bottom: none;
+}
+.resultados .resultado-item:hover {
+    background-color: #f0f0f0;
+}

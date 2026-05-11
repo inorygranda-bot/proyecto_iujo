@@ -1,0 +1,103 @@
+/* auditorias: layout general */
+#Auditoria {
+    width: 100%;
+    max-width: 1050px;
+    margin: 20px auto;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* cabecera con acciones */
+.CabeceraAuditoria {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #2c5f8d;
+    box-shadow: 0 4px 12px rgba(44, 95, 141, 0.06);
+}
+
+.CabeceraAuditoria__titulo {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #2c5f8d;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+.CabeceraAuditoria__sub {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #64748b;
+    max-width: 420px;
+    line-height: 1.4;
+}
+
+/* Tabla de auditoria */
+.TablaAuditoria {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    overflow-x: auto; /* Para tablas grandes en móviles */
+}
+
+#TablaAuditoria__contenido {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+#TablaAuditoria__contenido thead {
+    background-color: #eef2f6;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+#TablaAuditoria__contenido th {
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 700;
+    color: #2c5f8d;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+
+#TablaAuditoria__contenido tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+#TablaAuditoria__contenido tbody tr:last-child {
+    border-bottom: none;
+}
+
+#TablaAuditoria__contenido tbody tr:hover {
+    background-color: #f6faff;
+}
+
+#TablaAuditoria__contenido td {
+    padding: 10px 15px;
+    vertical-align: middle;
+}
+
+.TablaAuditoria__vacio {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    #TablaAuditoria__contenido th,
+    #TablaAuditoria__contenido td {
+        padding: 8px 10px;
+    }
+}

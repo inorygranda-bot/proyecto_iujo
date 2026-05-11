@@ -1,0 +1,165 @@
+.Tarjeta {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e8ecf1;
+    border-left: 4px solid #2c5f8d; /* Acento visual sutil */
+    box-shadow: 0 4px 16px rgba(44, 95, 141, 0.06);
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 32px 36px;
+    position: relative;
+}
+
+/* Encabezado */
+.Encabezado {
+    margin-bottom: 22px;
+    text-align: center;
+}
+
+.Titulo {
+    color: #1e293b;
+    font-weight: 800;
+    font-size: 1.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin: 0 0 6px;
+}
+
+.Subtitulo {
+    color: #64748b;
+    font-size: 0.88rem;
+    margin: 0 auto;
+    line-height: 1.45;
+    max-width: 450px;
+}
+
+/* Botón Volver (discreto y funcional) */
+.BotonEsquinaVolver {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    background: transparent;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.BotonEsquinaVolver:hover {
+    background: #f1f5f9;
+    color: #2c5f8d;
+    border-color: #cbd5e1;
+}
+
+/* Formulario */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+form label {
+    display: block;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+form input[type="text"],
+form textarea {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    color: #1e293b;
+    background: #f8fafc;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+form input[type="text"]:focus,
+form textarea:focus {
+    outline: none;
+    border-color: #2c5f8d;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(44, 95, 141, 0.08);
+}
+
+form textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* Botón Principal */
+.BotonSiguiente {
+    background: #2c5f8d;
+    color: #ffffff;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    align-self: flex-start;
+    margin-top: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.BotonSiguiente:hover {
+    background: #1e4976;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(44, 95, 141, 0.2);
+}
+
+/* Estado de Éxito */
+#CajaExito {
+    text-align: center;
+    padding: 10px 0;
+}
+
+#CajaExito i {
+    color: #10b981;
+    font-size: 2.8rem;
+    margin-bottom: 14px;
+    display: block;
+    filter: drop-shadow(0 2px 6px rgba(16, 185, 129, 0.2));
+}
+
+#CajaExito h3 {
+    color: #1e293b;
+    text-transform: uppercase;
+    font-weight: 800;
+    font-size: 1.05rem;
+    margin: 0 0 8px;
+}
+
+#CajaExito .Subtitulo {
+    margin-bottom: 20px;
+    color: #64748b;
+}
+
+#CajaExito .BotonSiguiente {
+    background: #2c5f8d;
+    align-self: center;
+}
+
+/* Responsive */
+@media (max-width: 650px) {
+    .Tarjeta { padding: 24px 20px; margin: 0 10px; }
+    .BotonEsquinaVolver { top: 16px; right: 16px; padding: 5px 10px; }
+    .BotonSiguiente { width: 100%; justify-content: center; }
+}

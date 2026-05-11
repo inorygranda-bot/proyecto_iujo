@@ -1,0 +1,219 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+:root {
+    --navy-blue: #2c5f8d;
+    --navy-blue-dark: #1e4976;
+    --white: #ffffff;
+    --gray-bg: #f5f7fa;
+    --text-main: #334155;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --error-red: #b91c1c;
+    --error-bg: #fee2e2;
+}
+
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    color: var(--text-main);
+}
+
+.LoginCard {
+    display: flex;
+    width: 900px;
+    max-width: 95%;
+    background: var(--white);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.LoginFormSide {
+    flex: 1;
+    padding: 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.LoginHeader {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.LoginHeader h1 {
+    font-size: 1.8rem;
+    color: var(--navy-blue);
+    font-weight: 800;
+}
+
+.LoginIcon {
+    width: 60px;
+    height: 60px;
+    background: #ebf4ff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px auto;
+    color: var(--navy-blue);
+    font-size: 1.5rem;
+}
+
+.ErrorMensaje {
+    background-color: var(--error-bg);
+    color: var(--error-red);
+    padding: 12px;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    border: 1px solid rgba(185, 28, 28, 0.2);
+    display: none; 
+}
+
+.InputGroup {
+    position: relative;
+    margin-bottom: 20px;
+    border: none;
+    padding: 0;
+}
+
+.InputGroup i {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    z-index: 1;
+    transition: color 0.3s ease;
+}
+
+.InputGroup input {
+    width: 100%;
+    padding: 14px 20px 14px 55px;
+    border: 2px solid var(--border);
+    border-radius: 50px;
+    background: var(--gray-bg);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.InputGroup input:focus {
+    border-color: var(--navy-blue);
+    background: var(--white);
+    box-shadow: 0 0 0 4px rgba(44, 95, 141, 0.1);
+}
+
+.InputGroup input:focus + i {
+    color: var(--navy-blue);
+}
+
+.LoginButton {
+    width: 100%;
+    padding: 14px;
+    background: var(--navy-blue);
+    color: var(--white);
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.LoginButton:hover {
+    background: var(--navy-blue-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(30, 73, 118, 0.3);
+}
+
+.LoginButton:active {
+    transform: translateY(0);
+}
+
+.LoginVisualSide {
+    flex: 1;
+    background: linear-gradient(135deg, var(--navy-blue) 0%, var(--navy-blue-dark) 100%);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    color: var(--white);
+    text-align: center;
+    overflow: hidden;
+}
+
+.LoginVisualSide::before {
+    content: '';
+    position: absolute;
+    width: 150%;
+    height: 150%;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+                radial-gradient(circle at 80% 80%, rgba(61, 122, 179, 0.3) 0%, transparent 50%);
+    top: -25%;
+    left: -25%;
+    filter: blur(40px);
+    z-index: 0;
+}
+
+.WelcomeContent {
+    z-index: 1;
+}
+
+.WelcomeContent h2 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin-bottom: 15px;
+    line-height: 1.2;
+}
+
+.WelcomeContent p {
+    font-size: 1.1rem;
+    opacity: 0.85;
+    line-height: 1.6;
+}
+
+
+@media (max-width: 850px) {
+    .LoginCard {
+        width: 450px;
+    }
+    .LoginVisualSide {
+        display: none;
+    }
+    .LoginFormSide {
+        padding: 40px 30px;
+    }
+}
+
+@media (max-width: 480px) {
+    .LoginCard {
+        width: 95%;
+        border-radius: 16px;
+    }
+    .LoginFormSide {
+        padding: 30px 20px;
+    }
+    .LoginHeader h1 {
+        font-size: 1.5rem;
+    }
+}

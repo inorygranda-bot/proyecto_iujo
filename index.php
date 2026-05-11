@@ -1,14 +1,16 @@
 <?php
 declare(strict_types=1);
-session_start();
 
-// 1. Cargamos primero los archivos que contienen las funciones de BD
-require_once __DIR__ . '/Modelos/conexionBD.php';
-require_once __DIR__ . '/Modelos/helpers_gestion_bd.php';
+// __DIR__ Es una constante de PHP que indica la ruta absoluta de la carpeta donde se encuentra el archivo actual. 
+// Esto asegura que PHP no se pierda al buscar el archivo, sin importar desde dónde se ejecute.
 
-// 2. Cargamos el controlador
-require_once __DIR__ . '/Controladores/InicioUsuario.php';
+// Busca el archivo donde está definida la clase AppControlador.
 
-// 3. Ejecutamos
-$app = new MainController();
-$app->index();
+require_once __DIR__ . '/Controlador/Sistema/AppControlador.php';
+
+// Aquí se crea un objeto de la clase AppControlador.
+
+//Probablemente, el controlador usa esta ruta para saber dónde están las vistas, 
+
+$controlador = new AppControlador(__DIR__);
+$controlador->mostrarAplicacion();

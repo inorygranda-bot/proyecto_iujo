@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Procesador Biometrico - Interfaz Visual</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            background: white;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .advertencia {
+            color: orange;
+            font-weight: bold;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>PROCESADOR BIOMETRICO - INTERFAZ VISUAL</h1>
+    
+    <h2>1. CONFIGURACION</h2>
+    <table>
+        <tr>
+            <td>Ruta del archivo TXT:</td>
+            <td><input type="text" id="rutaArchivo" value="./OMEGA.TXT" size="50"></td>
+        </tr>
+        <tr>
+            <td>Carpeta de reportes:</td>
+            <td><input type="text" id="carpetaReportes" value="./reportes"></td>
+        </tr>
+    </table>
+    
+    <button onclick="cargarArchivo()">CARGAR Y PROCESAR TXT</button>
+    <button onclick="buscarEmpleado()">BUSCAR EMPLEADO</button>
+    <br><br>
+    
+    <h2>2. RESUMEN GENERAL</h2>
+    <table id="tablaResumen">
+        <tr><td colspan="2">Esperando datos...</td></tr>
+    </table>
+    
+    <h2>3. LISTA DE ASISTENCIA</h2>
+    <table id="tablaAsistencia">
+        <thead>
+            <tr>
+                <th>EMP_ID</th>
+                <th>FECHA</th>
+                <th>DEPT</th>
+                <th>ENTRADA</th>
+                <th>SALIDA</th>
+                <th>ESTADO</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td colspan="6">Esperando datos...</td></tr>
+        </tbody>
+    </table>
+    
+    <h2>4. ERRORES Y ADVERTENCIAS</h2>
+    <textarea id="areaErrores" readonly placeholder="Se mostraran aqui los errores..."></textarea>
+    
+    <h2>5. REGISTROS CRUDOS (ORIGINALES)</h2>
+    <textarea id="areaCrudos" readonly placeholder="Registros del TXT original..."></textarea>
+
+    <script type="module">
+        import ProcesadorBiometrico from './procesadorBiometrico.js';
+        
+        let procesador = null;
+        let idEmpleadoBusqueda = '';
+        
+        window.cargarArchivo = async function() {
+            try {
+                const rutaArchivo = document.getElementById('rutaArchivo').value;
+                const carpetaReportes = document.getElementById('carpetaReportes').value;
+                
+                procesador = new ProcesadorBiometrico(carpetaReportes);
+                await procesador.cargarArchivo(rutaArchivo);
+                
+                mostrarResumen(procesador.obtenerResumen());
+                mostrarListaAsistencia(procesador.obtenerListaAsistencia());
+                mostrarMensajes(procesador);
+                
+            } catch (error) {
+                document.getElementById('areaErrores').value = 'ERROR: ' + error.message;
+            }
+        };
+        
+        function mostrarResumen(resumen) {
+            let html = `
+                <tr><td>Total Registros:</td><td>${resumen.totalRegistros}</td></tr>
+                <tr><td>Asistencias:</td><td>${resumen.asistenciasValidas}</td></tr>
+                <tr><td>Errores:</td><td class="error">${resumen.totalErrores}</td></tr>
+                <tr><td>Advertencias:</td><td class="advertencia">${resumen.totalAdvertencias}</td></tr>
+            `;
+            document.getElementById('tablaResumen').innerHTML = html;
+        }
+        
+        function mostrarListaAsistencia(lista) {
+            let html = '';
+            for (const registro of lista) {
+                html += `
+                    <tr>
+                        <td>${registro.idEmpleado}</td>
+                        <td>${registro.fecha}</td>
+                        <td>${registro.departamento}</td>
+                        <td>${registro.entrada || ''}</td>
+                        <td>${registro.salida || ''}</td>
+                        <td>${registro.estado}</td>
+                    </tr>
+                `;
+            }
+            document.getElementById('tablaAsistencia').querySelector('tbody').innerHTML = html || '<tr><td colspan="6">No hay datos</td></tr>';
+        }
+        
+        function mostrarMensajes(procesador) {
+            let texto = '';
+            
+            if (procesador.obtenerErrores().length > 0) {
+                texto += 'ERRORES:\n';
+                procesador.obtenerErrores().forEach(error => {
+                    texto += '- ' + error + '\n';
+                });
+                texto += '\n';
+            }
+            
+            if (procesador.obtenerAdvertencias().length > 0) {
+                texto += 'ADVERTENCIAS:\n';
+                procesador.obtenerAdvertencias().forEach(advertencia => {
+                    texto += '- ' + advertencia + '\n';
+                });
+            }
+            
+            document.getElementById('areaErrores').value = texto;
+            
+            let crudos = JSON.stringify(procesador.registrosCrudos, null, 2);
+            document.getElementById('areaCrudos').value = crudos;
+        }
+        
+        window.buscarEmpleado = function() {
+            if (!procesador) {
+                alert('Primero cargue un archivo');
+                return;
+            }
+            
+            const id = prompt('Ingrese ID del empleado:');
+            if (id) {
+                const resultados = procesador.buscarEmpleado(id);
+                mostrarListaAsistencia(resultados);
+            }
+        };
+    </script>
+</body>
+</html>
