@@ -242,6 +242,7 @@ function construirDatosSistemaDesdeRelacional(PDO $conexion): array
     $empleados = [];
     $sqlEmp = 'SELECT em.codigo_empleado AS codigo, em.nombre AS nombres, em.apellido AS apellidos,
                      em.cedula_empleado AS cedula, em.rif_empleado AS rif, em.cargo,
+                     em.es_supervisor AS es_supervisor, -- Bug 2: Añadir la columna es_supervisor
                      COALESCE(e.nombre, \'\') AS empresa,
                      COALESCE(d.nombre_departamento, \'\') AS depto,
                      COALESCE(em.jefe_inmediato, \'Sin asignar\') AS jefe

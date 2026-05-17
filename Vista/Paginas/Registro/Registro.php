@@ -41,14 +41,11 @@
 
             <label for="RifEmpresa">RIF (Empresarial)</label>
 
-            <input type="text" id="RifEmpresa" name="rif_empresa_manual" placeholder="J-12345678-0" maxlength="14" autocomplete="off" spellcheck="false" required>
-
-
+            <input type="text" id="RifEmpresa" name="rif_empresa_manual" placeholder="J-12345678-0" maxlength="20" autocomplete="off" spellcheck="false" required> <!-- Le agrandé el tamaño para ver si es por esto que no se guarda en la BD -->
 
             <label for="ObjetivoEmpresa">Objetivo de la empresa</label>
 
             <textarea id="ObjetivoEmpresa" placeholder="Opcional"></textarea>
-
 
 
             <button type="submit" class="BotonSiguiente">Crear empresa</button>
@@ -57,11 +54,7 @@
 
     </article>
 
-
-
     <!-- Tarjeta tras guardar la empresa en MySQL -->
-
-
 
     <article id="CajaExito" class="Tarjeta">
 
@@ -69,11 +62,11 @@
 
         <p class="Subtitulo">¿Desea visualizar la empresa en la página de gestión?</p>
 
-
-
         <nav class="Botones Vertical">
 
             <a href="index.php?p=consulta" class="BotonSiguiente">Ir a consulta</a>
+            <!-- Agregue este boton, pero no supe que estilo ponerle asi que le puse el mismo del otro, nose Emily si se lo vas a cambiar jiji -->
+            <a href="index.php?p=inicio" class="BotonSiguiente">Volver al menú</a>
 
         </nav>
 

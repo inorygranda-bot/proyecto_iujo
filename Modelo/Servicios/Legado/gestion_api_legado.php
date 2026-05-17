@@ -210,6 +210,8 @@ try {
             $cargo = post('cargo');
             $nombreEmpresa = post('empresa');
             $nombreDepto = post('departamento');
+            // LUIS NO AGREGO EL COSO DE ES_SUPERVISOR Y POR ESO NO AGARRABA, FOKIU LUIS PT 2
+            $esSupervisor = postInt('es_supervisor');
 
             if ($codigo === '' || $cedula === '' || $rif === ''
                 || $nombres === '' || $apellidos === '' || $cargo === ''
@@ -235,10 +237,12 @@ try {
                 'INSERT INTO Empleados
                 (es_supervisor, codigo_empleado, cedula_empleado, rif_empleado, nombre, apellido, cargo,
                  id_horario, id_departamento, jefe_inmediato)
-                 VALUES (0, :codigo, :cedula, :rif, :nombre, :apellido, :cargo,
+                 -- Aqui colocabas el valor de es_supervisor directamente como 0, por eso no lo guardaba -->
+                 VALUES (:es_supervisor, :codigo, :cedula, :rif, :nombre, :apellido, :cargo,
                  NULL, :id_dep, \'Sin asignar\')'
             );
             $insertar->execute([
+                'es_supervisor' => $esSupervisor, // Aqui tampoco tenias es_supervisor
                 'codigo' => $codigo,
                 'cedula' => $cedula,
                 'rif' => $rif,
@@ -469,6 +473,8 @@ try {
             $apellidos = post('apellidos');
             $cargo = post('cargo');
             $jefe = post('jefe');
+            // Se optiene el valor de es_supervisor
+            $esSupervisor = postInt('es_supervisor');
 
             if (
                 $cedulaOrig === '' || $nombreEmpresa === '' || $nombreDepto === ''
@@ -491,7 +497,8 @@ try {
                      apellido = :ape,
                      cargo = :car,
                      id_departamento = :iddep,
-                     jefe_inmediato = :jefe
+                     jefe_inmediato = :jefe,
+                     es_supervisor = :es_supervisor 
                  WHERE cedula_empleado = :cedo LIMIT 1'
             );
             try {
@@ -503,6 +510,7 @@ try {
                     'car' => $cargo,
                     'iddep' => $deptoUb['id_departamento'],
                     'jefe' => $jefe !== '' ? $jefe : 'Sin asignar',
+                    'es_supervisor' => $esSupervisor, 
                     'cedo' => $cedulaOrig,
                 ]);
             } catch (Throwable $e) {
@@ -523,28 +531,66 @@ try {
             $empNombre = post('empresa');
             $deptoNombre = post('departamento');
             $nombreSupervisor = post('supervisor');
+            $cedulaSupervisor = post('cedula_supervisor'); //Obtener la cédula del supervisor
+
+            if ($cedulaSupervisor === '') {
+                responder(false, 'Cédula del supervisor es obligatoria.');
+            }
 
             $row = buscarDepartamentoPorNombres($conexion, $empNombre, $deptoNombre);
             if (!$row) {
                 responder(false, 'Departamento no encontrado.');
             }
 
+            $idDepartamento = $row['id_departamento'];
+
+            // Obtener el supervisor actual del departamento para desmarcarlo si es diferente
+            $stCurrentSupervisor = $conexion->prepare(
+                'SELECT supervisor_nombre FROM departamento WHERE id_departamento = :id LIMIT 1'
+            );
+            $stCurrentSupervisor->execute(['id' => $idDepartamento]);
+            $currentSupervisorName = $stCurrentSupervisor->fetchColumn();
+
+            //Si hay un supervisor actual y es diferente al nuevo, desmarcarlo como supervisor
+            if ($currentSupervisorName && $currentSupervisorName !== $nombreSupervisor) {
+                $stOldSupervisor = $conexion->prepare(
+                    'UPDATE Empleados SET es_supervisor = 0 WHERE nombre = :nom AND apellido = :ape LIMIT 1'
+                );
+                $names = explode(' ', $currentSupervisorName, 2);
+                if (count($names) === 2) {
+                    $stOldSupervisor->execute([
+                        'nom' => $names[0],
+                        'ape' => $names[1],
+                    ]);
+                }
+            }
+
+            // Actualizar el departamento con el nuevo supervisor
             $up = $conexion->prepare(
                 'UPDATE departamento SET supervisor_nombre = :s WHERE id_departamento = :id LIMIT 1'
             );
-            $up->execute(['s' => $nombreSupervisor, 'id' => $row['id_departamento']]);
+            $up->execute(['s' => $nombreSupervisor, 'id' => $idDepartamento]);
 
+            // Actualizar jefe_inmediato para los empleados en ese departamento
             $upEmp = $conexion->prepare(
                 'UPDATE Empleados SET jefe_inmediato = :j
                  WHERE id_departamento = :id'
             );
-            $upEmp->execute(['j' => $nombreSupervisor, 'id' => $row['id_departamento']]);
+            $upEmp->execute(['j' => $nombreSupervisor, 'id' => $idDepartamento]);
+
+            // Marcar al nuevo supervisor como es_supervisor = 1
+            $upNewSupervisor = $conexion->prepare(
+                'UPDATE Empleados SET es_supervisor = 1 WHERE cedula_empleado = :cedula LIMIT 1'
+            );
+            $upNewSupervisor->execute(['cedula' => $cedulaSupervisor]);
 
             responder(true, 'Gerente asignado en base de datos.');
             break;
 
         case 'obtener_datos_sistema':
             $datos = construirDatosSistemaDesdeRelacional($conexion);
+            // Log para depuración: verificar qué datos se están devolviendo
+            error_log('Datos del sistema devueltos: ' . json_encode($datos));
             responder(true, 'Datos cargados desde tablas relacionales.', [
                 'datos' => $datos,
             ]);
@@ -646,10 +692,10 @@ try {
         case 'registrar_auditoria':
             $usuario = post('usuario');
             $accionAuditoria = post('accion_auditoria');
-            $detalle = post('detalle');
+            $descripcionAuditoria = post('descripcion'); // Aqui LUIS TENIA "DETALLE" EN VES DE "DESCRIPCION" que sepone que fue el nombre que el mismo le PUSO
 
-            if ($usuario === '' || $accionAuditoria === '') {
-                responder(false, 'Usuario y acción son obligatorios.');
+            if ($usuario === '' || $accionAuditoria === '' || $descripcionAuditoria === '') {
+                responder(false, 'Usuario, acción y descripción de auditoría son obligatorios.');
             }
 
             $idUser = idUsuarioPorLogin($conexion, $usuario);
@@ -664,7 +710,7 @@ try {
             $ins->execute([
                 'id' => $idUser,
                 'acc' => $accionAuditoria,
-                'descr' => $detalle,
+                'descr' => $descripcionAuditoria, 
             ]);
 
             responder(true, 'Auditoría registrada.');

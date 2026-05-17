@@ -9,7 +9,7 @@
         <label for="EditEmpresaNombre">Nombre</label>
         <input type="text" id="EditEmpresaNombre" required maxlength="120">
         <label for="EditEmpresaRif">RIF</label>
-        <input type="text" id="EditEmpresaRif" name="edit_rif_empresa_manual" required maxlength="14" autocomplete="off" spellcheck="false">
+        <input type="text" id="EditEmpresaRif" name="edit_rif_empresa_manual" required maxlength="20" autocomplete="off" spellcheck="false"> <!-- Le alargué el tamaño para ver si era eso perrito NO ERA PTM FOKIU LUIS ME LA PELAS-->
         <label for="EditEmpresaObjetivo">Objetivo</label>
         <textarea id="EditEmpresaObjetivo" rows="3"></textarea>
         <footer class="ModalConsulta__acciones">

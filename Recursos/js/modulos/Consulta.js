@@ -1,9 +1,4 @@
-/**
- * CONSULTA.JS - Versión estable y compatible con múltiples archivos JS
- * Corrección: Inicialización segura de datos globales + exposición de onclick
- */
 
-// 1. INICIALIZACIÓN SEGURA (Evita "Identifier already declared")
 window.datosSistema = window.datosSistema || null;
 
 const DEFAULT_DATOS = {
@@ -32,10 +27,6 @@ let empresaSeleccionadaRuta = "";
 let deptoSeleccionadoRuta = "";
 let consultaVistaNivel = "inicio";
 let refrescarVistaActual = null;
-
-// ========================================
-// UTILIDADES
-// ========================================
 
 function parseDatosGestionSeguro() {
     return window.datosSistema && typeof window.datosSistema === "object"
@@ -83,12 +74,10 @@ function normalizarDatos() {
         d.calendarios = JSON.parse(JSON.stringify(DEFAULT_DATOS.calendarios));
     }
 
-    // --- CORRECCIÓN CRÍTICA: Inicializar los contenedores primero ---
     if (!d.calendarios.feriadosSemana) d.calendarios.feriadosSemana = {};
     if (!d.calendarios.horariosFecha) d.calendarios.horariosFecha = {};
     if (!d.calendarios.horariosSemana) d.calendarios.horariosSemana = {};
     if (!d.calendarios.horarios) d.calendarios.horarios = {};
-    // ---------------------------------------------------------------
 
     const capas = ['general', 'empresas', 'departamentos', 'empleados'];
     capas.forEach(capa => {
@@ -107,7 +96,6 @@ function normalizarDatos() {
     });
 }
 
-/** Mantiene coherencia con la base de datos tras cambios vía API (sin volcar JSON entero al servidor). */
 async function sincronizarDatosConsulta() {
     await recargarDatosDesdeBD();
 }
@@ -146,10 +134,6 @@ function validarRifEmpresa(rif) {
 function validarRifPersonal(rif) {
     return /^[VvEe]-[0-9]{7,9}-[0-9]{1}$/.test(rif || "");
 }
-
-// ========================================
-// RENDERIZADO DE SELECTS
-// ========================================
 
 function llenarEmpresasEnSelect(id, selected = "") {
     const sel = $(id);
@@ -199,10 +183,6 @@ function llenarDeptosPorEmpresa(id, empresa, selected = "") {
     }
 }
 
-// ========================================
-// NAVEGACIÓN Y VISTAS
-// ========================================
-
 function actualizarVisibilidadVolverInterno() {
     const enlace = $("EnlaceVolverConsulta");
     if (enlace) {
@@ -246,10 +226,6 @@ function volverConsultaInterno(ev) {
         mostrarVistaInicialConsulta();
     }
 }
-
-// ========================================
-// LISTA DE EMPRESAS
-// ========================================
 
 function renderizarListaEmpresas() {
     recargarDatos();
@@ -303,10 +279,6 @@ function renderizarListaEmpresas() {
         lista.appendChild(bloque);
     });
 }
-
-// ========================================
-// SELECCIÓN DE EMPRESA
-// ========================================
 
 function seleccionarEmpresa(emp) {
     if (!emp || !emp.nombre) return;
@@ -369,10 +341,6 @@ function seleccionarEmpresa(emp) {
         if (e) seleccionarEmpresa(e);
     };
 }
-
-// ========================================
-// DETALLE DE DEPARTAMENTO
-// ========================================
 
 function verDetalleDepto(nombreEmp, nombreDepto) {
     consultaVistaNivel = "depto";
@@ -438,10 +406,6 @@ function verDetalleDepto(nombreEmp, nombreDepto) {
     };
 }
 
-// ========================================
-// GESTIÓN DE GERENTE
-// ========================================
-
 function abrirSeleccionGerente() {
     const lista = $("ListaCandidatosGerente");
     if (!lista) return;
@@ -458,7 +422,8 @@ function abrirSeleccionGerente() {
             const li = document.createElement("li");
             li.textContent = `${c.nombres} ${c.apellidos}`;
             li.style.cursor = "pointer";
-            li.addEventListener("click", () => asignarGerente(`${c.nombres} ${c.apellidos}`));
+            // Pasar la cédula del empleado al asignar como gerente.
+            li.addEventListener("click", () => asignarGerente(`${c.nombres} ${c.apellidos}`, c.cedula));
             lista.appendChild(li);
         });
     }
@@ -472,7 +437,7 @@ function cerrarSelector() {
     if (selector) selector.hidden = true;
 }
 
-async function asignarGerente(nombreCompleto) {
+async function asignarGerente(nombreCompleto, cedulaSupervisor) {
     const deptoCheck = (window.datosSistema.departamentos || []).find(d =>
         d.empresa === empresaSeleccionadaRuta && d.nombre === deptoSeleccionadoRuta
     );
@@ -487,6 +452,7 @@ async function asignarGerente(nombreCompleto) {
                 empresa: empresaSeleccionadaRuta,
                 departamento: deptoSeleccionadoRuta,
                 supervisor: nombreCompleto,
+                cedula_supervisor: cedulaSupervisor, //Enviar la cédula del supervisor al backend
             }),
         });
         const resultado = await respuesta.json();
@@ -506,10 +472,6 @@ async function asignarGerente(nombreCompleto) {
         alert("Error de red al guardar gerente.");
     }
 }
-
-// ========================================
-// MODALES - APERTURA
-// ========================================
 
 function abrirModalDepartamento() {
     if (!(window.datosSistema.empresas || []).length) return alert("Primero cree una empresa.");
@@ -894,6 +856,7 @@ function initEventosFormularios() {
                     cargo,
                     empresa,
                     departamento: depto,
+                    es_supervisor: 0, 
                 });
 
                 window.registrarAuditoria(
@@ -1016,6 +979,7 @@ function initEventosFormularios() {
                     apellidos: apellidosNv,
                     cargo: ($("EditEmpCargo")?.value || "").trim(),
                     jefe: $("EditEmpJefe")?.value || "Sin asignar",
+                    es_supervisor: e.es_supervisor, //Enviar el estado de supervisor al backend
                 });
 
                 window.registrarAuditoria(
@@ -1034,9 +998,6 @@ function initEventosFormularios() {
     }
 }
 
-// ========================================
-// EXPOSICIÓN GLOBAL PARA ONCLICK (OBLIGATORIO)
-// ========================================
 window.renderizarListaEmpresas = renderizarListaEmpresas;
 window.seleccionarEmpresa = seleccionarEmpresa;
 window.verDetalleDepto = verDetalleDepto;
@@ -1061,10 +1022,6 @@ window.obtenerHorarioEfectivo = function(idEmp, idDepto, idEmpld) {
     if (idEmp && h.empresas?.[idEmp] && h.empresas[idEmp].desdeM !== "") return h.empresas[idEmp];
     return h.general || { desdeM: "", hastaM: "", desdeT: "", hastaT: "" };
 };
-
-// ========================================
-// INICIALIZACIÓN
-// ========================================
 
 async function initConsulta() {
     console.log("🔄 Iniciando Consulta.js...");
