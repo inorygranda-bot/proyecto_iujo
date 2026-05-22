@@ -24,7 +24,6 @@ $pCalendario = $p ?? ($_GET["p"] ?? "inicio");
 
         <section class="FilaDoble">
             
-            <!-- Tarjeta 1: Contexto -->
             <section class="bloque-contexto-calendario">
                 <h3 class="bloque-contexto-calendario__titulo">¿Para quién programa?</h3>
                 <p class="bloque-contexto-calendario__txt">Elija empresa, departamento y empleado (opcional) y pulse <strong>Aplicar</strong>.</p>
@@ -42,7 +41,6 @@ $pCalendario = $p ?? ($_GET["p"] ?? "inicio");
                 </section>
             </section>
 
-            <!-- Tarjeta 2: Horario -->
             <section class="bloque-horario">
                 <h3>Horario laboral</h3>
                 <p>Valores por defecto del nivel. <strong>Tocando un día</strong> del calendario puede guardar horario solo para esa fecha o para todos los mismos días de la semana.</p>
@@ -59,7 +57,6 @@ $pCalendario = $p ?? ($_GET["p"] ?? "inicio");
 
         </section>
 
-        <!-- Navegación y Rejilla (quedan fuera de la FilaDoble para ocupar todo el ancho) -->
         <nav class="selector-fecha">
             <button onclick="cambiarMes(-1)" class="flecha">Anterior</button>
             <h3 id="TextoMesAno">Enero 2026</h3>

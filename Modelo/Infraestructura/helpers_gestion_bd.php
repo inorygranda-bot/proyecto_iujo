@@ -248,6 +248,10 @@ function normalizarDatosSistema(array $datos): array
 
     $calendarios = $resultado['calendarios'];
     foreach (['general', 'empresas', 'departamentos', 'empleados'] as $capa) {
+        // Convertir objetos stdClass a arrays si es necesario
+        if (isset($calendarios[$capa]) && $calendarios[$capa] instanceof \stdClass) {
+            $calendarios[$capa] = (array)$calendarios[$capa];
+        }
         if (!isset($calendarios[$capa]) || !is_array($calendarios[$capa])) {
             $calendarios[$capa] = [];
         }
@@ -255,6 +259,11 @@ function normalizarDatosSistema(array $datos): array
 
     if (!isset($calendarios['horarios']) || !is_array($calendarios['horarios'])) {
         $calendarios['horarios'] = [];
+    }
+
+    // Convertir horarios de stdClass a array si es necesario
+    if ($calendarios['horarios'] instanceof \stdClass) {
+        $calendarios['horarios'] = (array)$calendarios['horarios'];
     }
 
     if (!isset($calendarios['horarios']['general']) || !is_array($calendarios['horarios']['general'])) {
@@ -266,7 +275,16 @@ function normalizarDatosSistema(array $datos): array
         ];
     }
 
+    // Convertir objetos stdClass a arrays asociativos
+    
     foreach (['empresas', 'departamentos', 'empleados'] as $capaHorario) {
+        // Si es un objeto stdClass, convertirlo a array
+        if (isset($calendarios['horarios'][$capaHorario]) && $calendarios['horarios'][$capaHorario] instanceof \stdClass) {
+            error_log("normalizarDatosSistema: Convertir {$capaHorario} de stdClass a array");
+            $calendarios['horarios'][$capaHorario] = (array)$calendarios['horarios'][$capaHorario];
+        }
+        
+        // Si no existe o es un array secuencial, inicializarlo como array asociativo vacío
         if (!isset($calendarios['horarios'][$capaHorario]) || !is_array($calendarios['horarios'][$capaHorario])) {
             $calendarios['horarios'][$capaHorario] = [];
         }

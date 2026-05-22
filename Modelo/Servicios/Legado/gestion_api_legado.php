@@ -38,8 +38,29 @@ function persistirHorario(
     array $horarioData,
     ?int $idExistente = null
 ): int {
-    $h_entrada_tarde = $horarioData['desdeT'] ?? null;
-    $h_salida_tarde = $horarioData['hastaT'] ?? null;
+    // Obtener y limpiar los datos del horario
+    $h_entrada = trim($horarioData['desdeM'] ?? '');
+    $h_salida = trim($horarioData['hastaM'] ?? '');
+    $h_entrada_tarde = trim($horarioData['desdeT'] ?? '') !== '' ? trim($horarioData['desdeT']) : null;
+    $h_salida_tarde = trim($horarioData['hastaT'] ?? '') !== '' ? trim($horarioData['hastaT']) : null;
+
+    // Si la hora tiene segundos (ej: 08:00:00), quitarlos para guardar solo HH:MM
+    if (preg_match('/^(\d{2}:\d{2}):\d{2}$/', $h_entrada, $matches)) {
+        $h_entrada = $matches[1];
+    }
+    if (preg_match('/^(\d{2}:\d{2}):\d{2}$/', $h_salida, $matches)) {
+        $h_salida = $matches[1];
+    }
+    if ($h_entrada_tarde && preg_match('/^(\d{2}:\d{2}):\d{2}$/', $h_entrada_tarde, $matches)) {
+        $h_entrada_tarde = $matches[1];
+    }
+    if ($h_salida_tarde && preg_match('/^(\d{2}:\d{2}):\d{2}$/', $h_salida_tarde, $matches)) {
+        $h_salida_tarde = $matches[1];
+    }
+
+    // Registro de depuración: ver qué datos estamos recibiendo y limpiando
+    error_log("persistirHorario: nombre={$nombre}, idExistente=" . ($idExistente ?? 'null') . 
+              ", datos limpios: h_entrada={$h_entrada}, h_salida={$h_salida}, h_entrada_tarde=" . ($h_entrada_tarde ?? 'NULL') . ", h_salida_tarde=" . ($h_salida_tarde ?? 'NULL'));
 
     // Verificar si el idExistente realmente existe en la tabla horarios
     $existe = false;
@@ -47,10 +68,12 @@ function persistirHorario(
         $st = $conexion->prepare('SELECT id_horarios FROM horarios WHERE id_horarios = :id LIMIT 1');
         $st->execute(['id' => $idExistente]);
         $existe = $st->fetch() !== false;
+        error_log("persistirHorario: idExistente={$idExistente}, existe en BD=" . ($existe ? 'SI' : 'NO'));
     }
 
     if ($existe) {
         // Actualizar horario existente
+        error_log("persistirHorario: ACTUALIZANDO horario ID={$idExistente} en BD");
         $stmt = $conexion->prepare(
             'UPDATE horarios
              SET nombre_horario = :nombre,
@@ -60,29 +83,33 @@ function persistirHorario(
                  h_salida_tarde = :h_salida_tarde
              WHERE id_horarios = :id'
         );
-        $stmt->execute([
+        $resultado = $stmt->execute([
             'nombre' => $nombre,
-            'h_entrada' => $horarioData['desdeM'],
-            'h_salida' => $horarioData['hastaM'],
+            'h_entrada' => $h_entrada,
+            'h_salida' => $h_salida,
             'h_entrada_tarde' => $h_entrada_tarde,
             'h_salida_tarde' => $h_salida_tarde,
             'id' => $idExistente,
         ]);
+        error_log("persistirHorario: UPDATE finalizado, resultado=" . ($resultado ? 'OK' : 'ERROR') . ", filas afectadas=" . $stmt->rowCount());
         return $idExistente;
     } else {
         // Crear nuevo horario
+        error_log("persistirHorario: CREANDO nuevo horario en BD para {$nombre}");
         $stmt = $conexion->prepare(
             'INSERT INTO horarios (nombre_horario, h_entrada, h_salida, h_entrada_tarde, h_salida_tarde)
              VALUES (:nombre, :h_entrada, :h_salida, :h_entrada_tarde, :h_salida_tarde)'
         );
-        $stmt->execute([
+        $resultado = $stmt->execute([
             'nombre' => $nombre,
-            'h_entrada' => $horarioData['desdeM'],
-            'h_salida' => $horarioData['hastaM'],
+            'h_entrada' => $h_entrada,
+            'h_salida' => $h_salida,
             'h_entrada_tarde' => $h_entrada_tarde,
             'h_salida_tarde' => $h_salida_tarde,
         ]);
-        return (int)$conexion->lastInsertId();
+        $nuevoId = (int)$conexion->lastInsertId();
+        error_log("persistirHorario: INSERT finalizado, resultado=" . ($resultado ? 'OK' : 'ERROR') . ", nuevo ID generado=" . $nuevoId);
+        return $nuevoId;
     }
 }
 
@@ -92,21 +119,27 @@ function asignarHorarioAEntidad(
     string|int $idEntidad,
     ?int $idHorario
 ): void {
+    // Registro de depuración
+    error_log("asignarHorarioAEntidad: tipoEntidad={$tipoEntidad}, idEntidad={$idEntidad}, idHorario=" . ($idHorario ?? 'null'));
+
     switch ($tipoEntidad) {
         case 'empresas':
             // Asignar horario a una empresa (buscada por nombre)
             $stmt = $conexion->prepare('UPDATE Empresa SET id_horario = :id_h WHERE nombre = :id_e');
-            $stmt->execute(['id_h' => $idHorario, 'id_e' => $idEntidad]);
+            $resultado = $stmt->execute(['id_h' => $idHorario, 'id_e' => $idEntidad]);
+            error_log("asignarHorarioAEntidad (empresas): resultado=" . ($resultado ? 'OK' : 'ERROR') . ", filas afectadas=" . $stmt->rowCount());
             break;
         case 'departamentos':
             // Asignar horario a un departamento (buscado por nombre)
             $stmt = $conexion->prepare('UPDATE departamento SET id_horario = :id_h WHERE nombre_departamento = :id_e');
-            $stmt->execute(['id_h' => $idHorario, 'id_e' => $idEntidad]);
+            $resultado = $stmt->execute(['id_h' => $idHorario, 'id_e' => $idEntidad]);
+            error_log("asignarHorarioAEntidad (departamentos): resultado=" . ($resultado ? 'OK' : 'ERROR') . ", filas afectadas=" . $stmt->rowCount());
             break;
         case 'empleados':
             // Asignar horario a un empleado (buscado por cédula)
             $stmt = $conexion->prepare('UPDATE Empleados SET id_horario = :id_h WHERE cedula_empleado = :id_e');
-            $stmt->execute(['id_h' => $idHorario, 'id_e' => $idEntidad]);
+            $resultado = $stmt->execute(['id_h' => $idHorario, 'id_e' => $idEntidad]);
+            error_log("asignarHorarioAEntidad (empleados): resultado=" . ($resultado ? 'OK' : 'ERROR') . ", filas afectadas=" . $stmt->rowCount());
             break;
     }
 }
@@ -667,20 +700,39 @@ try {
             break;
 
         case 'guardar_datos_sistema':
-            // Obtener y normalizar los datos enviados desde el frontend
-            $entrada = postJsonArray('datos');
-            $entrada = normalizarDatosSistema($entrada);
+            // ====================================================================
+            // INICIAR TRANSACCIÓN para asegurar que todas las operaciones se guarden juntas
+            // ====================================================================
+            $conexion->beginTransaction();
+            error_log("guardar_datos_sistema: Transacción iniciada");
 
-            // Extraer la sección de calendarios
-            $calendarios = $entrada['calendarios'] ?? [];
-            // Extraer la sección de horarios dentro de calendarios
-            $horarios = $calendarios['horarios'] ?? [];
+            try {
+                // Registro de depuración: ver datos brutos recibidos
+                error_log("guardar_datos_sistema: datos brutos=" . ($_POST['datos'] ?? 'NO HAY DATOS'));
+                
+                // Obtener y normalizar los datos enviados desde el frontend
+                $entrada = postJsonArray('datos');
+                error_log("guardar_datos_sistema: entrada después de postJsonArray=" . json_encode($entrada));
+                
+                $entrada = normalizarDatosSistema($entrada);
+                error_log("guardar_datos_sistema: entrada después de normalizar=" . json_encode($entrada));
 
-            if (isset($horarios['general']) && is_array($horarios['general'])) {
+                // Extraer la sección de calendarios
+                $calendarios = $entrada['calendarios'] ?? [];
+                // Extraer la sección de horarios dentro de calendarios
+                $horarios = $calendarios['horarios'] ?? [];
+                error_log("guardar_datos_sistema: horarios a guardar=" . json_encode($horarios));
+
+                // ====================================================================
+                // 1. Guardar horario general (SIEMPRE lo guardamos, incluso si parece vacío)
+                // ====================================================================
+                error_log("guardar_datos_sistema: INICIO guardado de horario general");
                 // Buscar si ya existe un horario con nombre 'general'
                 $st = $conexion->prepare('SELECT id_horarios FROM horarios WHERE nombre_horario = :n LIMIT 1');
                 $st->execute(['n' => 'general']);
                 $idHorarioGeneral = $st->fetchColumn();
+                error_log("guardar_datos_sistema: idHorarioGeneral encontrado=" . ($idHorarioGeneral !== false ? $idHorarioGeneral : 'NO ENCONTRADO'));
+                
                 // Persistir el horario (actualizar si existe, crear si no)
                 $idHorarioGeneral = persistirHorario(
                     $conexion,
@@ -688,56 +740,85 @@ try {
                     $horarios['general'],
                     $idHorarioGeneral !== false ? (int)$idHorarioGeneral : null
                 );
-            }
-            foreach (['empresas', 'departamentos', 'empleados'] as $tipoEntidad) {
-                if (isset($horarios[$tipoEntidad]) && is_array($horarios[$tipoEntidad])) {
-                    foreach ($horarios[$tipoEntidad] as $idEntidad => $horarioData) {
-                        // Verificar que los datos del horario sean válidos
-                        if (is_array($horarioData) && !empty($horarioData['desdeM'])) {
-                            // Obtener el id_horario actualmente asignado a la entidad (si existe)
-                            $idExistente = null;
-                            if ($tipoEntidad === 'empresas') {
-                                $st = $conexion->prepare('SELECT id_horario FROM Empresa WHERE nombre = :id_e LIMIT 1');
-                                $st->execute(['id_e' => $idEntidad]);
-                                $idExistente = $st->fetchColumn();
-                            } elseif ($tipoEntidad === 'departamentos') {
-                                $st = $conexion->prepare('SELECT id_horario FROM departamento WHERE nombre_departamento = :id_e LIMIT 1');
-                                $st->execute(['id_e' => $idEntidad]);
-                                $idExistente = $st->fetchColumn();
-                            } elseif ($tipoEntidad === 'empleados') {
-                                $st = $conexion->prepare('SELECT id_horario FROM Empleados WHERE cedula_empleado = :id_e LIMIT 1');
-                                $st->execute(['id_e' => $idEntidad]);
-                                $idExistente = $st->fetchColumn();
+                error_log("guardar_datos_sistema: FIN guardado de horario general, ID final=" . $idHorarioGeneral);
+
+                // ====================================================================
+                // 2. Guardar horarios de empresas, departamentos y empleados
+                // ====================================================================
+                foreach (['empresas', 'departamentos', 'empleados'] as $tipoEntidad) {
+                    error_log("guardar_datos_sistema: Procesando tipoEntidad=" . $tipoEntidad);
+                    if (isset($horarios[$tipoEntidad]) && is_array($horarios[$tipoEntidad])) {
+                        error_log("guardar_datos_sistema: Hay " . count($horarios[$tipoEntidad]) . " horarios para {$tipoEntidad}");
+                        foreach ($horarios[$tipoEntidad] as $idEntidad => $horarioData) {
+                            error_log("guardar_datos_sistema: Procesando {$tipoEntidad} {$idEntidad}, horarioData=" . json_encode($horarioData));
+                            // Verificar que los datos del horario sean válidos
+                            if (is_array($horarioData) && !empty($horarioData['desdeM'])) {
+                                // Obtener el id_horario actualmente asignado a la entidad (si existe)
+                                $idExistente = null;
+                                if ($tipoEntidad === 'empresas') {
+                                    $st = $conexion->prepare('SELECT id_horario FROM Empresa WHERE nombre = :id_e LIMIT 1');
+                                    $st->execute(['id_e' => $idEntidad]);
+                                    $idExistente = $st->fetchColumn();
+                                } elseif ($tipoEntidad === 'departamentos') {
+                                    $st = $conexion->prepare('SELECT id_horario FROM departamento WHERE nombre_departamento = :id_e LIMIT 1');
+                                    $st->execute(['id_e' => $idEntidad]);
+                                    $idExistente = $st->fetchColumn();
+                                } elseif ($tipoEntidad === 'empleados') {
+                                    $st = $conexion->prepare('SELECT id_horario FROM Empleados WHERE cedula_empleado = :id_e LIMIT 1');
+                                    $st->execute(['id_e' => $idEntidad]);
+                                    $idExistente = $st->fetchColumn();
+                                }
+                                error_log("guardar_datos_sistema: idExistente para {$tipoEntidad} {$idEntidad} es " . ($idExistente !== false ? $idExistente : 'NO HAY'));
+
+                                // Persistir el horario en la tabla 'horarios'
+                                $idHorarioGuardado = persistirHorario(
+                                    $conexion,
+                                    "{$tipoEntidad}-{$idEntidad}", // Nombre único para el horario
+                                    $horarioData,
+                                    $idExistente !== false ? (int)$idExistente : null
+                                );
+
+                                // Asignar el horario guardado a la entidad correspondiente
+                                asignarHorarioAEntidad($conexion, $tipoEntidad, $idEntidad, $idHorarioGuardado);
+                            } else {
+                                // Si el horario está vacío, desasignarlo de la entidad
+                                error_log("guardar_datos_sistema: Desasignando horario para {$tipoEntidad} {$idEntidad} (datos inválidos)");
+                                asignarHorarioAEntidad($conexion, $tipoEntidad, $idEntidad, null);
                             }
-
-                            // Persistir el horario en la tabla 'horarios'
-                            $idHorarioGuardado = persistirHorario(
-                                $conexion,
-                                "{$tipoEntidad}-{$idEntidad}", // Nombre único para el horario
-                                $horarioData,
-                                $idExistente !== false ? (int)$idExistente : null
-                            );
-
-                            // Asignar el horario guardado a la entidad correspondiente
-                            asignarHorarioAEntidad($conexion, $tipoEntidad, $idEntidad, $idHorarioGuardado);
-                        } else {
-                            // Si el horario está vacío, desasignarlo de la entidad
-                            asignarHorarioAEntidad($conexion, $tipoEntidad, $idEntidad, null);
                         }
+                    } else {
+                        error_log("guardar_datos_sistema: No hay horarios para {$tipoEntidad} (o no es un array)");
                     }
                 }
+
+                // ====================================================================
+                // 3. Guardar el resto de la información de calendarios como JSON
+                // ====================================================================
+                $calendariosParaJson = $calendarios;
+                unset($calendariosParaJson['horarios']); // Excluir horarios porque ya los guardamos relacionalmente
+
+                // Guardar toda la información de calendarios (excepto horarios) en formato JSON
+                guardarJsonConfig($conexion, 'calendarios', $calendariosParaJson);
+
+                // Guardar la sección de incidencias también en formato JSON
+                guardarJsonConfig($conexion, 'incidencias', $entrada['incidencias'] ?? []);
+
+                // ====================================================================
+                // CONFIRMAR TRANSACCIÓN - todo salió bien!
+                // ====================================================================
+                $conexion->commit();
+                error_log("guardar_datos_sistema: Transacción confirmada (commit)");
+
+                // Responder con éxito
+                responder(true, 'Preferencias guardadas en base de datos.');
+            } catch (Throwable $e) {
+                // ====================================================================
+                // DESHACER TRANSACCIÓN si hubo un error
+                // ====================================================================
+                $conexion->rollBack();
+                error_log("guardar_datos_sistema: Error en transacción, rollback ejecutado: " . $e->getMessage() . " - " . $e->getTraceAsString());
+                throw $e; // Volver a lanzar la excepción para que se maneje en el catch general
             }
-            $calendariosParaJson = $calendarios;
-            unset($calendariosParaJson['horarios']);
-
-            // Guardar toda la información de calendarios (excepto horarios) en formato JSON
-            guardarJsonConfig($conexion, 'calendarios', $calendariosParaJson);
-
-            // Guardar la sección de incidencias también en formato JSON
-            guardarJsonConfig($conexion, 'incidencias', $entrada['incidencias'] ?? []);
-
-            // Responder con éxito
-            responder(true, 'Preferencias guardadas en base de datos.');
             break;
 
         case 'obtener_roles_sistema':

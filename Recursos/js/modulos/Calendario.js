@@ -80,8 +80,33 @@ async function cargarDatosCalendarioDesdeBD() {
         var resultado = await respuesta.json();
 
         if (resultado && resultado.ok && resultado.data && resultado.data.datos) {
-            
             datosSistema = resultado.data.datos;
+            
+            // Convertir arrays a objetos para empresas/departamentos/empleados
+            // Porque el backend envía arrays [] pero necesitamos objetos {}
+            
+            console.log("DEBUG JS: Datos cargados desde BD, antes de convertir:", JSON.parse(JSON.stringify(datosSistema.calendarios.horarios)));
+            
+            // Convertir horarios.empresas a objeto si es un array
+
+            if (datosSistema.calendarios && datosSistema.calendarios.horarios) {
+                ["empresas", "departamentos", "empleados"].forEach(function (capa) {
+                    if (datosSistema.calendarios.horarios[capa] && Array.isArray(datosSistema.calendarios.horarios[capa])) {
+                        console.log("DEBUG JS: Convertir " + capa + " de array a objeto");
+                        var arrayOriginal = datosSistema.calendarios.horarios[capa];
+                        var objetoNuevo = {};
+                        // Copiar todas las propiedades del array al nuevo objeto
+                        for (var key in arrayOriginal) {
+                            if (arrayOriginal.hasOwnProperty(key)) {
+                                objetoNuevo[key] = arrayOriginal[key];
+                            }
+                        }
+                        datosSistema.calendarios.horarios[capa] = objetoNuevo;
+                    }
+                });
+            }
+            
+            console.log("DEBUG JS: Datos después de convertir:", JSON.parse(JSON.stringify(datosSistema.calendarios.horarios)));
         } else {
             var mensaje = resultado && resultado.mensaje ? resultado.mensaje : "Respuesta inesperada del servidor.";
             console.error("Error al cargar datos del sistema:", mensaje);
@@ -94,7 +119,34 @@ async function cargarDatosCalendarioDesdeBD() {
 }
 
 async function guardarDatosCalendario() {
+    console.log("DEBUG JS: Inicia guardarDatosCalendario");
     asegurarCalendarios();
+
+    var datosParaEnviar = JSON.parse(JSON.stringify(datosSistema));
+    
+    // Forzar que sean objetos
+    if (datosParaEnviar.calendarios && datosParaEnviar.calendarios.horarios) {
+        ["empresas", "departamentos", "empleados"].forEach(function (capa) {
+            // Si es un array, convertirlo a objeto
+            if (Array.isArray(datosParaEnviar.calendarios.horarios[capa])) {
+                console.log("DEBUG JS: Convertir " + capa + " de array a objeto antes de enviar");
+                var arrayOriginal = datosParaEnviar.calendarios.horarios[capa];
+                var objetoNuevo = {};
+                for (var key in arrayOriginal) {
+                    if (arrayOriginal.hasOwnProperty(key)) {
+                        objetoNuevo[key] = arrayOriginal[key];
+                    }
+                }
+                datosParaEnviar.calendarios.horarios[capa] = objetoNuevo;
+            }
+        });
+    }
+
+    var datosAEnviar = JSON.stringify(datosParaEnviar);
+    console.log("DEBUG JS: datosSistema a enviar (JSON):", datosAEnviar);
+    console.log("DEBUG JS: datosParaEnviar.calendarios.horarios.empresas:", datosParaEnviar.calendarios.horarios.empresas);
+    console.log("DEBUG JS: datosParaEnviar.calendarios.horarios.departamentos:", datosParaEnviar.calendarios.horarios.departamentos);
+    console.log("DEBUG JS: datosParaEnviar.calendarios.horarios.empleados:", datosParaEnviar.calendarios.horarios.empleados);
 
     try {
         var respuesta = await fetch("Controlador/API/gestion_api.php", {
@@ -104,11 +156,12 @@ async function guardarDatosCalendario() {
             },
             body: new URLSearchParams({
                 accion: "guardar_datos_sistema",
-                datos: JSON.stringify(datosSistema)
+                datos: datosAEnviar
             })
         });
 
         var resultado = await respuesta.json();
+        console.log("DEBUG JS: Respuesta del servidor:", resultado);
 
         if (!resultado || !resultado.ok) {
             throw new Error(resultado && resultado.mensaje ? resultado.mensaje : "No se pudo guardar en base de datos.");
@@ -388,23 +441,44 @@ async function guardarHorarioActual(e) {
         desdeT: document.getElementById("HoraDesdeT").value,
         hastaT: document.getElementById("HoraHastaT").value
     };
+    console.log("DEBUG JS: Datos del horario a guardar:", h);
 
     if (!h.desdeM || !h.hastaM) {
         return alert("El turno de la mañana es obligatorio.");
     }
 
     var clave = keyHorarioActual();
+    console.log("DEBUG JS: clave (tipo y id):", clave);
+    console.log("DEBUG JS: nivelActual:", nivelActual);
+    console.log("DEBUG JS: empresaActual:", empresaActual);
+    console.log("DEBUG JS: deptoActual:", deptoActual);
+    console.log("DEBUG JS: idEmpleadoActual:", idEmpleadoActual);
+
     var capa = datosSistema.calendarios.horarios;
+    console.log("DEBUG JS: capa (datosSistema.calendarios.horarios) ANTES de guardar:", JSON.parse(JSON.stringify(capa)));
 
     if (clave.tipo === "general") {
         capa.general = h;
+        console.log("DEBUG JS: Guardado en capa.general");
     } else if (clave.tipo === "empresas") {
+        // Asegurar que exista el objeto empresas
+        if (!capa.empresas) capa.empresas = {};
         capa.empresas[clave.id] = h;
+        console.log("DEBUG JS: Guardado en capa.empresas['" + clave.id + "']");
     } else if (clave.tipo === "departamentos") {
+        // Asegurar que exista el objeto departamentos
+        if (!capa.departamentos) capa.departamentos = {};
         capa.departamentos[clave.id] = h;
+        console.log("DEBUG JS: Guardado en capa.departamentos['" + clave.id + "']");
     } else if (clave.tipo === "empleados") {
+        // Asegurar que exista el objeto empleados
+        if (!capa.empleados) capa.empleados = {};
         capa.empleados[clave.id] = h;
+        console.log("DEBUG JS: Guardado en capa.empleados['" + clave.id + "']");
     }
+
+    console.log("DEBUG JS: capa DESPUÉS de guardar:", JSON.parse(JSON.stringify(capa)));
+    console.log("DEBUG JS: datosSistema completo para enviar:", JSON.parse(JSON.stringify(datosSistema)));
 
     if (typeof window.registrarAuditoria === "function") {
         window.registrarAuditoria(
@@ -904,21 +978,6 @@ function verCalendarioDeEmpleado(cedula, nombreCompleto, nombreDepto, nombreEmpr
     mostrarCalendario();
 }
 
-/*
- * ============================================================
- * SINCRONIZACIÓN CON GOOGLE CALENDAR
- * ============================================================
- */
-
-/**
- * Descarga los feriados de Venezuela desde Google Calendar
- * y los pinta en la rejilla del calendario.
- *
- * SOLUCIÓN a fallos anteriores:
- *   - Ruta absoluta desde la raíz del proyecto (sin ./ ni ..).
- *   - Manejo mejorado de la respuesta y errores.
- *   - Se valida que haya empresa seleccionada.
- */
 async function sincronizarConGoogle() {
     // Validar que haya una empresa seleccionada
     if (!empresaActual || nivelActual === "" || nivelActual === "general") {
@@ -990,11 +1049,6 @@ function actualizarDatosLocalesDesdeGoogle(eventos) {
     guardarDatosCalendario();
 }
 
-/*
- * ============================================================
- * INICIALIZACIÓN AL CARGAR LA PÁGINA
- * ============================================================
- */
 
 document.addEventListener("DOMContentLoaded", async function () {
 
