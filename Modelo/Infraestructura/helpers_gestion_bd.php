@@ -1,10 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Migración opcional para que la app encaje en el modelo relacional definido por el proyecto.
- */
-
 function tablaExiste(PDO $conexion, string $nombre): bool
 {
     $q = $conexion->prepare(
@@ -37,9 +33,6 @@ function constraintExiste(PDO $conexion, string $constraintNombre): bool
     return (int)$q->fetchColumn() > 0;
 }
 
-/**
- * Tabla liviana sólo para calendarios e incidencias (no datos maestros de empresas/empleados).
- */
 function asegurarTablaConfiguracionApp(PDO $conexion): void
 {
     if (tablaExiste($conexion, 'configuracion_app')) {
@@ -54,9 +47,6 @@ function asegurarTablaConfiguracionApp(PDO $conexion): void
     );
 }
 
-/**
- * Liga empleados a departamento y permite gerente nominal en departamento sin romper FK actuales.
- */
 function migrarEsquemaAplicacionOpcional(PDO $conexion): void
 {
     asegurarTablaConfiguracionApp($conexion);
@@ -96,9 +86,100 @@ function migrarEsquemaAplicacionOpcional(PDO $conexion): void
              AFTER id_departamento'
         );
     }
+
+    // Asegurar tabla de horarios
+    if (!tablaExiste($conexion, 'horarios')) {
+        $conexion->exec(
+            'CREATE TABLE horarios (
+                id_horarios INT AUTO_INCREMENT PRIMARY KEY,
+                nombre_horario VARCHAR(255) NOT NULL,
+                h_entrada VARCHAR(5) NOT NULL,
+                h_salida VARCHAR(5) NOT NULL,
+                h_entrada_tarde VARCHAR(5) NULL,
+                h_salida_tarde VARCHAR(5) NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
+        );
+    }
+
+    // Asegurar columnas h_entrada_tarde y h_salida_tarde en la tabla horarios
+    if (tablaExiste($conexion, 'horarios')) {
+        if (!columnaExiste($conexion, 'horarios', 'h_entrada_tarde')) {
+            $conexion->exec('ALTER TABLE horarios ADD COLUMN h_entrada_tarde VARCHAR(5) NULL AFTER h_salida;');
+        }
+        if (!columnaExiste($conexion, 'horarios', 'h_salida_tarde')) {
+            $conexion->exec('ALTER TABLE horarios ADD COLUMN h_salida_tarde VARCHAR(5) NULL AFTER h_entrada_tarde;');
+        }
+    }
+
+    // Asegurar columna id_horario en Empresa
+    if (!columnaExiste($conexion, 'Empresa', 'id_horario')) {
+        $conexion->exec('ALTER TABLE Empresa ADD COLUMN id_horario INT NULL AFTER causa;');
+        if (!constraintExiste($conexion, 'fk_empresa_horario')) {
+            try {
+                $conexion->exec(
+                    'ALTER TABLE Empresa
+                     ADD CONSTRAINT fk_empresa_horario FOREIGN KEY (id_horario)
+                     REFERENCES horarios(id_horarios)
+                     ON DELETE SET NULL ON UPDATE CASCADE'
+                );
+            } catch (Throwable $e) {
+                error_log('Migración FK empresa->horario: ' . $e->getMessage());
+            }
+        }
+    }
+
+    // Asegurar columna id_horario en departamento
+    if (!columnaExiste($conexion, 'departamento', 'id_horario')) {
+        $conexion->exec('ALTER TABLE departamento ADD COLUMN id_horario INT NULL AFTER supervisor_nombre;');
+        if (!constraintExiste($conexion, 'fk_departamento_horario')) {
+            try {
+                $conexion->exec(
+                    'ALTER TABLE departamento
+                     ADD CONSTRAINT fk_departamento_horario FOREIGN KEY (id_horario)
+                     REFERENCES horarios(id_horarios)
+                     ON DELETE SET NULL ON UPDATE CASCADE'
+                );
+            } catch (Throwable $e) {
+                error_log('Migración FK departamento->horario: ' . $e->getMessage());
+            }
+        }
+    }
+
+    // Asegurar columna id_horario en Empleados (ya existe, pero verificar FK)
+    // Asumiendo que ya existe la columna id_horario en Empleados por el problema original
+    if (columnaExiste($conexion, 'Empleados', 'id_horario')) {
+        if (!constraintExiste($conexion, 'fk_empleado_horario')) {
+            try {
+                $conexion->exec(
+                    'ALTER TABLE Empleados
+                     ADD CONSTRAINT fk_empleado_horario FOREIGN KEY (id_horario)
+                     REFERENCES horarios(id_horarios)
+                     ON DELETE SET NULL ON UPDATE CASCADE'
+                );
+            } catch (Throwable $e) {
+                error_log('Migración FK empleado->horario: ' . $e->getMessage());
+            }
+        }
+    }
+
+    // Asegurar que exista un horario general por defecto
+    $st = $conexion->prepare('SELECT COUNT(*) FROM horarios WHERE nombre_horario = :n');
+    $st->execute(['n' => 'general']);
+    if ((int)$st->fetchColumn() === 0) {
+        $ins = $conexion->prepare(
+            'INSERT INTO horarios (nombre_horario, h_entrada, h_salida, h_entrada_tarde, h_salida_tarde)
+             VALUES (:nombre, :he, :hs, :het, :hst)'
+        );
+        $ins->execute([
+            'nombre' => 'general',
+            'he' => '08:00',
+            'hs' => '12:00',
+            'het' => '13:00',
+            'hst' => '17:00',
+        ]);
+    }
 }
 
-/** @return array<string, mixed> */
 function leerJsonConfig(PDO $conexion, string $clave, array $fallback = []): array
 {
     $st = $conexion->prepare('SELECT valor_json FROM configuracion_app WHERE clave = :c LIMIT 1');
@@ -111,6 +192,16 @@ function leerJsonConfig(PDO $conexion, string $clave, array $fallback = []): arr
     return is_array($j) ? $j : $fallback;
 }
 
+/**
+ * Guarda una configuración en formato JSON en la tabla configuracion_app.
+ * Si la clave ya existe, actualiza su valor; si no, la inserta.
+ *
+ * @param PDO $conexion Conexión a la base de datos
+ * @param string $clave Clave de la configuración
+ * @param array $valor Datos a guardar (serán serializados a JSON)
+ * @return void
+ * @throws RuntimeException Si no se puede serializar el JSON
+ */
 function guardarJsonConfig(PDO $conexion, string $clave, array $valor): void
 {
     $json = json_encode($valor, JSON_UNESCAPED_UNICODE);
@@ -200,17 +291,13 @@ function normalizarDatosSistema(array $datos): array
     return $resultado;
 }
 
-/**
- * Construye la estructura que consume el frontend a partir del modelo relacional.
- *
- * @return array<string, mixed>
- */
 function construirDatosSistemaDesdeRelacional(PDO $conexion): array
 {
+    // Cargar lista de empresas
     $empresas = [];
     foreach (
         $conexion->query(
-            'SELECT nombre, rif_empresa AS rif, COALESCE(causa, \'\') AS causa
+            'SELECT nombre, rif_empresa AS rif, COALESCE(causa, \'\') AS causa, id_horario
              FROM Empresa ORDER BY nombre ASC'
         )->fetchAll(PDO::FETCH_ASSOC)
         ?: []
@@ -220,13 +307,16 @@ function construirDatosSistemaDesdeRelacional(PDO $conexion): array
             'nombre' => $e['nombre'],
             'rif' => $e['rif'],
             'causa' => $e['causa'],
+            'id_horario' => $e['id_horario'],
         ];
     }
 
+    // Cargar lista de departamentos
     $departamentos = [];
     $sqlDept = 'SELECT d.nombre_departamento AS nombre, e.nombre AS empresa,
                        COALESCE(d.causa, \'\') AS causa,
-                       COALESCE(d.supervisor_nombre, \'Sin asignar\') AS supervisor
+                       COALESCE(d.supervisor_nombre, \'Sin asignar\') AS supervisor,
+                       d.id_horario
                 FROM departamento d
                 INNER JOIN Empresa e ON e.id_empresa = d.id_empresa
                 ORDER BY e.nombre ASC, d.nombre_departamento ASC';
@@ -236,13 +326,16 @@ function construirDatosSistemaDesdeRelacional(PDO $conexion): array
             'empresa' => $d['empresa'],
             'causa' => $d['causa'],
             'supervisor' => $d['supervisor'],
+            'id_horario' => $d['id_horario'],
         ];
     }
 
+    // Cargar lista de empleados
     $empleados = [];
     $sqlEmp = 'SELECT em.codigo_empleado AS codigo, em.nombre AS nombres, em.apellido AS apellidos,
                      em.cedula_empleado AS cedula, em.rif_empleado AS rif, em.cargo,
-                     em.es_supervisor AS es_supervisor, -- Bug 2: Añadir la columna es_supervisor
+                     em.es_supervisor AS es_supervisor,
+                     em.id_horario,
                      COALESCE(e.nombre, \'\') AS empresa,
                      COALESCE(d.nombre_departamento, \'\') AS depto,
                      COALESCE(em.jefe_inmediato, \'Sin asignar\') AS jefe
@@ -258,22 +351,103 @@ function construirDatosSistemaDesdeRelacional(PDO $conexion): array
             'cedula' => $em['cedula'],
             'rif' => $em['rif'],
             'cargo' => $em['cargo'],
+            'id_horario' => $em['id_horario'],
             'empresa' => $em['empresa'],
             'depto' => $em['depto'],
             'jefe' => $em['jefe'],
         ];
     }
 
+    // ========================================================================
+    // PASO 2: Cargar datos de configuración en JSON (calendarios, incidencias)
+    // ========================================================================
+
+    // Cargar calendarios desde la configuración JSON
     $calendarios = leerJsonConfig($conexion, 'calendarios', []);
+
+    // ========================================================================
+    // PASO 3: Cargar horarios desde la tabla relacional 'horarios'
+    // ========================================================================
+
+    // Estructura base para los horarios
+    $horariosCargados = [
+        'general' => [
+            'desdeM' => '',
+            'hastaM' => '',
+            'desdeT' => '',
+            'hastaT' => '',
+        ],
+        'empresas' => [],
+        'departamentos' => [],
+        'empleados' => [],
+    ];
+
+    // Cargar horario general
+    $stGeneral = $conexion->prepare('SELECT id_horarios FROM horarios WHERE nombre_horario = :n LIMIT 1');
+    $stGeneral->execute(['n' => 'general']);
+    $idHorarioGeneral = $stGeneral->fetchColumn();
+    if ($idHorarioGeneral !== false) {
+        $h = obtenerHorarioPorId($conexion, (int)$idHorarioGeneral);
+        if ($h) {
+            $horariosCargados['general'] = $h;
+        }
+    }
+
+    // Cargar horarios de empresas
+    $stEmpresas = $conexion->query('SELECT nombre, id_horario FROM Empresa');
+    foreach ($stEmpresas->fetchAll(PDO::FETCH_ASSOC) as $emp) {
+        if ($emp['id_horario']) {
+            $h = obtenerHorarioPorId($conexion, (int)$emp['id_horario']);
+            if ($h) {
+                $horariosCargados['empresas'][$emp['nombre']] = $h;
+            }
+        }
+    }
+
+    // Cargar horarios de departamentos
+    $stDepartamentos = $conexion->query('SELECT nombre_departamento, id_horario FROM departamento');
+    foreach ($stDepartamentos->fetchAll(PDO::FETCH_ASSOC) as $dep) {
+        if ($dep['id_horario']) {
+            $h = obtenerHorarioPorId($conexion, (int)$dep['id_horario']);
+            if ($h) {
+                $horariosCargados['departamentos'][$dep['nombre_departamento']] = $h;
+            }
+        }
+    }
+
+    // Cargar horarios de empleados
+    $stEmpleados = $conexion->query('SELECT cedula_empleado, id_horario FROM Empleados');
+    foreach ($stEmpleados->fetchAll(PDO::FETCH_ASSOC) as $empl) {
+        if ($empl['id_horario']) {
+            $h = obtenerHorarioPorId($conexion, (int)$empl['id_horario']);
+            if ($h) {
+                $horariosCargados['empleados'][$empl['cedula_empleado']] = $h;
+            }
+        }
+    }
+
+    // ========================================================================
+    // PASO 4: Fusionar datos relacionales con datos JSON
+    // ========================================================================
+
+    // Fusionar los horarios cargados desde la BD relacional con los del JSON
+    if (!isset($calendarios['horarios']) || !is_array($calendarios['horarios'])) {
+        $calendarios['horarios'] = [];
+    }
+    $calendarios['horarios'] = array_replace_recursive($calendarios['horarios'], $horariosCargados);
+
+    // Si no hay calendarios, usar la estructura normalizada por defecto
     if ($calendarios === []) {
         $calendarios = normalizarDatosSistema([])['calendarios'] ?? [];
     }
 
+    // Cargar incidencias desde la configuración JSON
     $incidencias = leerJsonConfig($conexion, 'incidencias', []);
 
-    /**
-     * @var array<string, mixed> $compuesto
-     */
+    // ========================================================================
+    // PASO 5: Componer la estructura final y normalizarla
+    // ========================================================================
+
     $compuesto = [
         'empresas' => $empresas,
         'departamentos' => $departamentos,
@@ -364,14 +538,31 @@ function idUsuarioPorLogin(PDO $conexion, string $usuario): ?int
     $st = $conexion->prepare('SELECT id_usuario FROM usuarios WHERE usuario = :u LIMIT 1');
     $st->execute(['u' => $usuario]);
     $f = $st->fetch(PDO::FETCH_ASSOC);
-    return $f ? (int)$f['id_usuario'] : null;
+    return (int)$f['id_usuario'] ?? null;
 }
 
-/**
- * Lista de permisos (nombre_permisos) del usuario desde roles_permisos.
- *
- * @return list<string>
- */
+function obtenerHorarioPorId(PDO $conexion, int $idHorario): ?array
+{
+    $stmt = $conexion->prepare(
+        'SELECT h_entrada, h_salida, h_entrada_tarde, h_salida_tarde
+         FROM horarios WHERE id_horarios = :id LIMIT 1'
+    );
+    $stmt->execute(['id' => $idHorario]);
+    $fila = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$fila) {
+        return null;
+    }
+
+    // Convertir los nombres de columnas de la BD al formato del frontend
+    return [
+        'desdeM' => $fila['h_entrada'],      // Hora de entrada de la mañana
+        'hastaM' => $fila['h_salida'],      // Hora de salida de la mañana
+        'desdeT' => $fila['h_entrada_tarde'],// Hora de entrada de la tarde
+        'hastaT' => $fila['h_salida_tarde'],// Hora de salida de la tarde
+    ];
+}
+
 function obtenerModulosUsuario(PDO $conexion, string $usuarioLogin): array
 {
     asegurarPermisosModulos($conexion);
@@ -385,7 +576,6 @@ function obtenerModulosUsuario(PDO $conexion, string $usuarioLogin): array
     $st = $conexion->prepare($sql);
     $st->execute(['u' => $usuarioLogin]);
 
-    /** @var list<string> */
     $out = [];
     while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
         $out[] = (string)$row['nombre_permisos'];

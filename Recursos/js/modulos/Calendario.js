@@ -1,24 +1,4 @@
-/*
- * ============================================================
- * CALENDARIO - GESTIÓN DE HORARIOS LABORALES
- * ============================================================
- * Controla:
- *   1. Selects "¿Para quién programa?" (Empresa → Depto → Empleado)
- *   2. Rejilla de calendario mensual con feriados y horarios
- *   3. Sincronización con Google Calendar (feriados Venezuela)
- *   4. Editor de días (feriados y horarios por fecha)
- *
- * CORRECCIONES APLICADAS (Abril 2026):
- *   - Selects ahora se llenan desde datosSistema.empresas,
- *     datosSistema.departamentos, datosSistema.empleados
- *     (estructura que devuelve helpers_gestion_bd.php).
- *   - DOMContentLoaded espera correctamente la carga asíncrona.
- *   - Sincronización Google usa ruta absoluta desde la raíz.
- *   - Mensajes de error descriptivos en cada paso.
- * ============================================================
- */
 
-// Estado global del calendario
 let nivelActual = "";
 let idActual = null;
 let empresaActual = "";
@@ -28,22 +8,10 @@ let idEmpleadoActual = null;
 let fechaActual = new Date();
 let fechaGlobal = null;
 
-// Datos del sistema (empresas, departamentos, empleados, calendarios)
 let datosSistema = {};
 
-// Constante para la capa general
 const CAL_ID_GLOBAL = "_";
 
-/*
- * ============================================================
- * FUNCIONES DE INICIALIZACIÓN Y ESTRUCTURA DE DATOS
- * ============================================================
- */
-
-/**
- * Asegura que la estructura de datosSistema.calendarios tenga
- * todas las propiedades necesarias para no generar errores.
- */
 function asegurarCalendarios() {
     if (!datosSistema.calendarios) {
         datosSistema.calendarios = {};
@@ -62,7 +30,7 @@ function asegurarCalendarios() {
     }
     if (!datosSistema.calendarios.horarios) {
         datosSistema.calendarios.horarios = {
-            general: null,
+            general: {},
             empresas: {},
             departamentos: {},
             empleados: {}
@@ -97,10 +65,6 @@ function asegurarCalendarios() {
     });
 }
 
-/**
- * Carga los datos del sistema desde la base de datos a través de la API.
- * Estos datos incluyen: empresas, departamentos, empleados y calendarios.
- */
 async function cargarDatosCalendarioDesdeBD() {
     try {
         var respuesta = await fetch("Controlador/API/gestion_api.php", {
@@ -116,7 +80,7 @@ async function cargarDatosCalendarioDesdeBD() {
         var resultado = await respuesta.json();
 
         if (resultado && resultado.ok && resultado.data && resultado.data.datos) {
-            // Asignar los datos cargados
+            
             datosSistema = resultado.data.datos;
         } else {
             var mensaje = resultado && resultado.mensaje ? resultado.mensaje : "Respuesta inesperada del servidor.";
@@ -126,13 +90,9 @@ async function cargarDatosCalendarioDesdeBD() {
         console.error("Error de conexión al cargar datos del calendario:", error);
     }
 
-    // Siempre aseguramos la estructura, incluso si falló la carga
     asegurarCalendarios();
 }
 
-/**
- * Guarda los datos del calendario en la base de datos.
- */
 async function guardarDatosCalendario() {
     asegurarCalendarios();
 
@@ -158,15 +118,6 @@ async function guardarDatosCalendario() {
     }
 }
 
-/*
- * ============================================================
- * FUNCIONES AUXILIARES DE CAPAS Y ENTIDADES
- * ============================================================
- */
-
-/**
- * Devuelve el ID de la entidad activa según el nivel seleccionado.
- */
 function calIdEntidadActiva() {
     if (nivelActual === "general") return CAL_ID_GLOBAL;
     if (nivelActual === "empresas") return empresaActual || CAL_ID_GLOBAL;
@@ -175,9 +126,6 @@ function calIdEntidadActiva() {
     return CAL_ID_GLOBAL;
 }
 
-/**
- * Devuelve el nombre de la capa según el nivel seleccionado.
- */
 function calCapaNivel() {
     if (nivelActual === "general") return "general";
     if (nivelActual === "empresas") return "empresas";
@@ -186,9 +134,6 @@ function calCapaNivel() {
     return "general";
 }
 
-/**
- * Devuelve la clave del horario actual.
- */
 function keyHorarioActual() {
     if (nivelActual === "general") return { tipo: "general", id: "general" };
     if (nivelActual === "empresas") return { tipo: "empresas", id: empresaActual };
@@ -197,19 +142,6 @@ function keyHorarioActual() {
     return { tipo: "general", id: "general" };
 }
 
-/*
- * ============================================================
- * LLENADO DE SELECTS "¿PARA QUIÉN PROGRAMA?"
- * ============================================================
- */
-
-/**
- * Llena los selects de Empresa, Departamento y Empleado.
- *
- * @param {string} origen - "inicial" para llenar todo desde cero,
- *                          "empresa" cuando cambia el select de empresa,
- *                          "depto" cuando cambia el select de departamento.
- */
 function calRellenarSelectContexto(origen) {
     var selE = document.getElementById("CalSelEmpresa");
     var selD = document.getElementById("CalSelDepto");
@@ -219,19 +151,17 @@ function calRellenarSelectContexto(origen) {
         return;
     }
 
-    // --- LLENADO INICIAL (primera carga de la página) ---
     if (!origen || origen === "inicial") {
 
-        // LIMPIAR Y LLENAR SELECT DE EMPRESA
         selE.innerHTML = '<option value="">— Seleccione una Empresa —</option>';
 
         var empresas = (Array.isArray(datosSistema.empresas)) ? datosSistema.empresas : [];
 
         if (empresas.length === 0) {
-            // No hay empresas: mostramos opción deshabilitada informativa
+
             selE.innerHTML += '<option value="" disabled>No hay empresas registradas</option>';
         } else {
-            // Hay empresas: las agregamos al select
+
             for (var i = 0; i < empresas.length; i++) {
                 var emp = empresas[i];
                 var opt = document.createElement("option");
@@ -241,15 +171,12 @@ function calRellenarSelectContexto(origen) {
             }
         }
 
-        // LIMPIAR Y DESHABILITAR SELECT DE DEPARTAMENTO
         selD.innerHTML = '<option value="">— Elija departamento —</option>';
         selD.disabled = true;
 
-        // LIMPIAR Y DESHABILITAR SELECT DE EMPLEADO
         selEm.innerHTML = '<option value="">— Elija empleado —</option>';
         selEm.disabled = true;
 
-        // DESHABILITAR BOTÓN APLICAR
         var btnAplicar = document.querySelector(".ctx-aplicar");
         if (btnAplicar) {
             btnAplicar.disabled = true;
@@ -258,11 +185,9 @@ function calRellenarSelectContexto(origen) {
         return;
     }
 
-    // --- CAMBIO EN SELECT DE EMPRESA ---
     if (origen === "empresa") {
         var empSeleccionada = selE.value;
 
-        // Limpiar y preparar select de departamento
         selD.innerHTML = '<option value="">— Elija departamento —</option>';
         selEm.innerHTML = '<option value="">— Elija empleado —</option>';
         selEm.disabled = true;
@@ -272,7 +197,6 @@ function calRellenarSelectContexto(origen) {
 
             var todosLosDeptos = (Array.isArray(datosSistema.departamentos)) ? datosSistema.departamentos : [];
 
-            // Filtrar departamentos que pertenecen a la empresa seleccionada
             var filtrados = [];
             for (var j = 0; j < todosLosDeptos.length; j++) {
                 var depto = todosLosDeptos[j];
@@ -300,12 +224,10 @@ function calRellenarSelectContexto(origen) {
         }
     }
 
-    // --- CAMBIO EN SELECT DE DEPARTAMENTO ---
     if (origen === "depto") {
         var empActual = selE.value;
         var deptoSeleccionado = selD.value;
 
-        // Limpiar select de empleado
         selEm.innerHTML = '<option value="">— Elija empleado —</option>';
 
         if (deptoSeleccionado !== "") {
@@ -313,7 +235,6 @@ function calRellenarSelectContexto(origen) {
 
             var todosLosEmpleados = (Array.isArray(datosSistema.empleados)) ? datosSistema.empleados : [];
 
-            // Filtrar empleados por empresa Y departamento
             var filtradosEm = [];
             for (var m = 0; m < todosLosEmpleados.length; m++) {
                 var empleado = todosLosEmpleados[m];
@@ -351,9 +272,6 @@ function calRellenarSelectContexto(origen) {
     }
 }
 
-/**
- * Aplica la selección de los selects al contexto del calendario.
- */
 function calAplicarContextoDesdeSelects() {
     var elEmp = document.getElementById("CalSelEmpresa");
     var elDep = document.getElementById("CalSelDepto");
@@ -372,7 +290,9 @@ function calAplicarContextoDesdeSelects() {
     idEmpleadoActual = ced || null;
 
     if (ced !== "") {
+
         // Buscar nombre del empleado
+
         var empleadosArr = (Array.isArray(datosSistema.empleados)) ? datosSistema.empleados : [];
         var empleadoEncontrado = null;
         for (var a = 0; a < empleadosArr.length; a++) {
@@ -392,15 +312,6 @@ function calAplicarContextoDesdeSelects() {
     }
 }
 
-/*
- * ============================================================
- * HORARIOS
- * ============================================================
- */
-
-/**
- * Obtiene el horario para mostrar en los inputs del editor de día.
- */
 function obtenerHorarioActualParaInputs(fecha) {
     asegurarCalendarios();
 
@@ -440,9 +351,6 @@ function obtenerHorarioActualParaInputs(fecha) {
     return h || { desdeM: "", hastaM: "", desdeT: "", hastaT: "" };
 }
 
-/**
- * Carga el horario de la capa actual en el formulario.
- */
 function cargarHorarioActual() {
     var hCapas = datosSistema.calendarios.horarios;
     var r = null;
@@ -470,10 +378,8 @@ function cargarHorarioActual() {
     if (inputHastaT) inputHastaT.value = (r && r.hastaT) ? r.hastaT : "";
 }
 
-/**
- * Guarda el horario de la capa actual.
- */
 async function guardarHorarioActual(e) {
+    console.log("DEBUG JS: Inicia guardarHorarioActual");
     e.preventDefault();
 
     var h = {
@@ -512,11 +418,6 @@ async function guardarHorarioActual(e) {
     alert("Horarios guardados correctamente.");
 }
 
-/*
- * ============================================================
- * FERIADOS Y ESTADO DE DÍAS
- * ============================================================
- */
 
 function normalizarFeriadoValor(v) {
     if (v === null || v === undefined) return null;
@@ -771,12 +672,6 @@ function eliminarHorarioDia(fecha) {
     renderizarCalendario();
 }
 
-/*
- * ============================================================
- * EDITOR DE DÍA (MODAL)
- * ============================================================
- */
-
 function abrirEditorDia(fecha, estado) {
     fechaGlobal = fecha;
     var fs = fecha.toISOString().split("T")[0];
@@ -857,12 +752,6 @@ async function procesarGuardado(esUnico) {
     renderizarCalendario();
     cerrar();
 }
-
-/*
- * ============================================================
- * REJILLA DEL CALENDARIO
- * ============================================================
- */
 
 function renderizarCalendario() {
     var cont = document.getElementById("CuadriculaCalendario");

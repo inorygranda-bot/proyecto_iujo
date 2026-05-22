@@ -32,15 +32,90 @@ function postJsonArray(string $key): array
     return is_array($decoded) ? $decoded : [];
 }
 
+function persistirHorario(
+    PDO $conexion,
+    string $nombre,
+    array $horarioData,
+    ?int $idExistente = null
+): int {
+    $h_entrada_tarde = $horarioData['desdeT'] ?? null;
+    $h_salida_tarde = $horarioData['hastaT'] ?? null;
+
+    // Verificar si el idExistente realmente existe en la tabla horarios
+    $existe = false;
+    if ($idExistente) {
+        $st = $conexion->prepare('SELECT id_horarios FROM horarios WHERE id_horarios = :id LIMIT 1');
+        $st->execute(['id' => $idExistente]);
+        $existe = $st->fetch() !== false;
+    }
+
+    if ($existe) {
+        // Actualizar horario existente
+        $stmt = $conexion->prepare(
+            'UPDATE horarios
+             SET nombre_horario = :nombre,
+                 h_entrada = :h_entrada,
+                 h_salida = :h_salida,
+                 h_entrada_tarde = :h_entrada_tarde,
+                 h_salida_tarde = :h_salida_tarde
+             WHERE id_horarios = :id'
+        );
+        $stmt->execute([
+            'nombre' => $nombre,
+            'h_entrada' => $horarioData['desdeM'],
+            'h_salida' => $horarioData['hastaM'],
+            'h_entrada_tarde' => $h_entrada_tarde,
+            'h_salida_tarde' => $h_salida_tarde,
+            'id' => $idExistente,
+        ]);
+        return $idExistente;
+    } else {
+        // Crear nuevo horario
+        $stmt = $conexion->prepare(
+            'INSERT INTO horarios (nombre_horario, h_entrada, h_salida, h_entrada_tarde, h_salida_tarde)
+             VALUES (:nombre, :h_entrada, :h_salida, :h_entrada_tarde, :h_salida_tarde)'
+        );
+        $stmt->execute([
+            'nombre' => $nombre,
+            'h_entrada' => $horarioData['desdeM'],
+            'h_salida' => $horarioData['hastaM'],
+            'h_entrada_tarde' => $h_entrada_tarde,
+            'h_salida_tarde' => $h_salida_tarde,
+        ]);
+        return (int)$conexion->lastInsertId();
+    }
+}
+
+function asignarHorarioAEntidad(
+    PDO $conexion,
+    string $tipoEntidad,
+    string|int $idEntidad,
+    ?int $idHorario
+): void {
+    switch ($tipoEntidad) {
+        case 'empresas':
+            // Asignar horario a una empresa (buscada por nombre)
+            $stmt = $conexion->prepare('UPDATE Empresa SET id_horario = :id_h WHERE nombre = :id_e');
+            $stmt->execute(['id_h' => $idHorario, 'id_e' => $idEntidad]);
+            break;
+        case 'departamentos':
+            // Asignar horario a un departamento (buscado por nombre)
+            $stmt = $conexion->prepare('UPDATE departamento SET id_horario = :id_h WHERE nombre_departamento = :id_e');
+            $stmt->execute(['id_h' => $idHorario, 'id_e' => $idEntidad]);
+            break;
+        case 'empleados':
+            // Asignar horario a un empleado (buscado por cédula)
+            $stmt = $conexion->prepare('UPDATE Empleados SET id_horario = :id_h WHERE cedula_empleado = :id_e');
+            $stmt->execute(['id_h' => $idHorario, 'id_e' => $idEntidad]);
+            break;
+    }
+}
+
 function postInt(string $key, int $default = 0): int
 {
     return (int)($_POST[$key] ?? $default);
 }
 
-/**
- * Obtiene id_rol por el nombre tal como viene del formulario (coincide con `roles.nombre_rol`).
- * Si no existe, crea un rol nuevo con ese nombre (no fuerza «analista»).
- */
 function obtenerIdRolInterno(PDO $conexion, string $rolCliente): int
 {
     $rolCliente = trim($rolCliente);
@@ -88,11 +163,6 @@ function obtenerIdRolInterno(PDO $conexion, string $rolCliente): int
     return (int)$conexion->lastInsertId();
 }
 
-/**
- * IDs de empresa y departamento por nombres.
- *
- * @return array{id_empresa:int, id_departamento:int}|null
- */
 function buscarDepartamentoPorNombres(
     PDO $conexion,
     string $nombreEmpresa,
@@ -597,10 +667,76 @@ try {
             break;
 
         case 'guardar_datos_sistema':
+            // Obtener y normalizar los datos enviados desde el frontend
             $entrada = postJsonArray('datos');
             $entrada = normalizarDatosSistema($entrada);
-            guardarJsonConfig($conexion, 'calendarios', $entrada['calendarios'] ?? []);
+
+            // Extraer la sección de calendarios
+            $calendarios = $entrada['calendarios'] ?? [];
+            // Extraer la sección de horarios dentro de calendarios
+            $horarios = $calendarios['horarios'] ?? [];
+
+            if (isset($horarios['general']) && is_array($horarios['general'])) {
+                // Buscar si ya existe un horario con nombre 'general'
+                $st = $conexion->prepare('SELECT id_horarios FROM horarios WHERE nombre_horario = :n LIMIT 1');
+                $st->execute(['n' => 'general']);
+                $idHorarioGeneral = $st->fetchColumn();
+                // Persistir el horario (actualizar si existe, crear si no)
+                $idHorarioGeneral = persistirHorario(
+                    $conexion,
+                    'general',
+                    $horarios['general'],
+                    $idHorarioGeneral !== false ? (int)$idHorarioGeneral : null
+                );
+            }
+            foreach (['empresas', 'departamentos', 'empleados'] as $tipoEntidad) {
+                if (isset($horarios[$tipoEntidad]) && is_array($horarios[$tipoEntidad])) {
+                    foreach ($horarios[$tipoEntidad] as $idEntidad => $horarioData) {
+                        // Verificar que los datos del horario sean válidos
+                        if (is_array($horarioData) && !empty($horarioData['desdeM'])) {
+                            // Obtener el id_horario actualmente asignado a la entidad (si existe)
+                            $idExistente = null;
+                            if ($tipoEntidad === 'empresas') {
+                                $st = $conexion->prepare('SELECT id_horario FROM Empresa WHERE nombre = :id_e LIMIT 1');
+                                $st->execute(['id_e' => $idEntidad]);
+                                $idExistente = $st->fetchColumn();
+                            } elseif ($tipoEntidad === 'departamentos') {
+                                $st = $conexion->prepare('SELECT id_horario FROM departamento WHERE nombre_departamento = :id_e LIMIT 1');
+                                $st->execute(['id_e' => $idEntidad]);
+                                $idExistente = $st->fetchColumn();
+                            } elseif ($tipoEntidad === 'empleados') {
+                                $st = $conexion->prepare('SELECT id_horario FROM Empleados WHERE cedula_empleado = :id_e LIMIT 1');
+                                $st->execute(['id_e' => $idEntidad]);
+                                $idExistente = $st->fetchColumn();
+                            }
+
+                            // Persistir el horario en la tabla 'horarios'
+                            $idHorarioGuardado = persistirHorario(
+                                $conexion,
+                                "{$tipoEntidad}-{$idEntidad}", // Nombre único para el horario
+                                $horarioData,
+                                $idExistente !== false ? (int)$idExistente : null
+                            );
+
+                            // Asignar el horario guardado a la entidad correspondiente
+                            asignarHorarioAEntidad($conexion, $tipoEntidad, $idEntidad, $idHorarioGuardado);
+                        } else {
+                            // Si el horario está vacío, desasignarlo de la entidad
+                            asignarHorarioAEntidad($conexion, $tipoEntidad, $idEntidad, null);
+                        }
+                    }
+                }
+            }
+            $calendariosParaJson = $calendarios;
+            unset($calendariosParaJson['horarios']);
+
+            // Guardar toda la información de calendarios (excepto horarios) en formato JSON
+            guardarJsonConfig($conexion, 'calendarios', $calendariosParaJson);
+
+            // Guardar la sección de incidencias también en formato JSON
             guardarJsonConfig($conexion, 'incidencias', $entrada['incidencias'] ?? []);
+
+            // Responder con éxito
             responder(true, 'Preferencias guardadas en base de datos.');
             break;
 
@@ -721,5 +857,6 @@ try {
     }
 } catch (Throwable $error) {
     error_log('Error en gestion_api.php: ' . $error->getMessage());
-    responder(false, 'Error de base de datos. Revise registros.');
+    // Temporalmente, devolvemos el mensaje de error para depuración
+    responder(false, 'Error de base de datos: ' . $error->getMessage());
 }

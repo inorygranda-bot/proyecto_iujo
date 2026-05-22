@@ -2,16 +2,20 @@
 declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 
+// Configuración de la API de Google Calendar
 $apiKey = 'AIzaSyCCchbbPcQVRODZj4hZP86UyAhidKAOq6g';
-$calendarId = 'es.ve#holiday@group.v.calendar.google.com';
+$calendarId = 'es.ve#holiday@group.v.calendar.google.com'; // Calendario de feriados de Venezuela
 
-$nivel = trim((string)($_GET['nivel'] ?? ''));
-$idEntidad = trim((string)($_GET['id'] ?? ''));
+// Obtener parámetros de la solicitud
+$nivel = trim((string)($_GET['nivel'] ?? ''));     // Nivel (general, empresas, departamentos, empleados)
+$idEntidad = trim((string)($_GET['id'] ?? ''));   // ID de la entidad
 
+// Definir el rango de fechas para buscar feriados (año actual y siguiente)
 $anoActual = (int) date('Y');
 $timeMin = $anoActual . '-01-01T00:00:00Z';
 $timeMax = ($anoActual + 1) . '-01-01T00:00:00Z';
 
+// Construir la URL de la API de Google Calendar
 $url = 'https://www.googleapis.com/calendar/v3/calendars/'
     . urlencode($calendarId)
     . '/events'
@@ -22,6 +26,7 @@ $url = 'https://www.googleapis.com/calendar/v3/calendars/'
     . '&orderBy=startTime'
     . '&maxResults=2500';
 
+// Verificar que la extensión cURL esté habilitada
 if (!function_exists('curl_init')) {
     echo json_encode([
         'success' => false,
@@ -30,36 +35,38 @@ if (!function_exists('curl_init')) {
     exit;
 }
 
+// Inicializar la sesión cURL
 $ch = curl_init();
 
+// Configurar las opciones de cURL
 curl_setopt_array($ch, [
     CURLOPT_URL => $url,
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_TIMEOUT => 25,
-    CURLOPT_CONNECTTIMEOUT => 10,
+    CURLOPT_RETURNTRANSFER => true,    // Devolver la respuesta en lugar de imprimirla
+    CURLOPT_TIMEOUT => 25,              // Tiempo máximo de espera para la respuesta
+    CURLOPT_CONNECTTIMEOUT => 10,       // Tiempo máximo de espera para la conexión
 
+    // Configuraciones SSL (desactivadas para facilitar la conexión en entornos de desarrollo)
     CURLOPT_SSL_VERIFYPEER => false,
     CURLOPT_SSL_VERIFYHOST => 0,
 
+    // Cabeceras HTTP
     CURLOPT_HTTPHEADER => [
         'Accept: application/json',
         'User-Agent: SistemaGestionAsistencias/1.0',
     ],
 
-    CURLOPT_FAILONERROR => false,
-
-    CURLOPT_FOLLOWLOCATION => true,
-    CURLOPT_MAXREDIRS => 3,
+    CURLOPT_FAILONERROR => false,       // No fallar automáticamente en errores HTTP
+    CURLOPT_FOLLOWLOCATION => true,      // Seguir redirecciones
+    CURLOPT_MAXREDIRS => 3,               // Máximo número de redirecciones
 ]);
 
-// Ejecutar petición
+// Ejecutar la petición a Google Calendar
 $response = curl_exec($ch);
 $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $errorCurl = curl_error($ch);
 curl_close($ch);
 
-// MANEJO DE ERRORES 
-
+// Error en la conexión cURL
 if ($response === false || $response === '') {
     $mensajeError = $errorCurl !== ''
         ? 'Error de conexión cURL: ' . $errorCurl
@@ -71,6 +78,7 @@ if ($response === false || $response === '') {
     exit;
 }
 
+// Error en el código HTTP de respuesta
 if ($httpCode !== 200) {
     $mensajeHttp = 'Google Calendar respondió con código HTTP ' . $httpCode . '. ';
     if ($httpCode === 403) {
@@ -88,8 +96,10 @@ if ($httpCode !== 200) {
     exit;
 }
 
+// Decodificar la respuesta JSON
 $data = json_decode($response, true);
 
+// Verificar que la respuesta sea un array válido
 if (!is_array($data)) {
     echo json_encode([
         'success' => false,
@@ -98,6 +108,7 @@ if (!is_array($data)) {
     exit;
 }
 
+// Verificar si hay un error en la respuesta de Google
 if (isset($data['error'])) {
     $mensajeGoogle = $data['error']['message'] ?? 'Error desconocido de Google.';
     $codigoGoogle = $data['error']['code'] ?? 0;
@@ -108,6 +119,7 @@ if (isset($data['error'])) {
     exit;
 }
 
+// Verificar que existan eventos en la respuesta
 if (!isset($data['items']) || !is_array($data['items'])) {
     echo json_encode([
         'success' => false,
@@ -118,33 +130,36 @@ if (!isset($data['items']) || !is_array($data['items'])) {
 
 $eventosFinales = [];
 
+// Recorrer cada evento y formatearlo para el sistema
 foreach ($data['items'] as $item) {
     $fechaRaw = '';
+    // Obtener la fecha del evento (puede ser date o dateTime)
     if (isset($item['start']['date'])) {
         $fechaRaw = $item['start']['date'];
     } elseif (isset($item['start']['dateTime'])) {
         $fechaRaw = $item['start']['dateTime'];
     }
 
+    // Saltar eventos sin fecha
     if ($fechaRaw === '') {
         continue; 
     }
 
-    // solo YYYY-MM-DD
+    // Extraer solo la parte de fecha (YYYY-MM-DD)
     $fechaFormateada = substr($fechaRaw, 0, 10);
 
+    // Validar que la fecha tenga el formato correcto
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaFormateada)) {
         continue;
     }
 
+    // Agregar el evento al array final
     $eventosFinales[] = [
         'fecha' => $fechaFormateada,
-        'summary' => $item['summary'] ?? 'Sin nombre',
-        'laboral' => false,
+        'summary' => $item['summary'] ?? 'Sin nombre',  // Nombre del feriado
+        'laboral' => false,                              // Los feriados no son laborales por defecto
     ];
 }
-
-// Respuesta exitosa
 
 echo json_encode([
     'success' => true,
