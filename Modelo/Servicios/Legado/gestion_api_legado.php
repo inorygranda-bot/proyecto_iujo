@@ -362,8 +362,11 @@ try {
             $usuario = post('usuario');
             $password = post('password');
             $rol = post('rol');
+            $rolId = postInt('id_rol');
+            $empresasAsignadas = postJsonArray('empresas_asignadas');
+            error_log('crear_usuario: empresas_asignadas=' . json_encode($empresasAsignadas, JSON_UNESCAPED_UNICODE));
 
-            if ($usuario === '' || $password === '' || $rol === '') {
+            if ($usuario === '' || $password === '' || ($rolId <= 0 && $rol === '')) {
                 responder(false, 'Usuario, contraseña y rol son obligatorios.');
             }
 
@@ -373,17 +376,28 @@ try {
                 responder(false, 'El nombre de usuario ya existe.');
             }
 
-            $idRol = obtenerIdRolInterno($conexion, $rol);
+            if ($rolId > 0) {
+                $validRol = $conexion->prepare('SELECT id_rol FROM roles WHERE id_rol = :id LIMIT 1');
+                $validRol->execute(['id' => $rolId]);
+                if (!$validRol->fetch()) {
+                    responder(false, 'Rol seleccionado no existe.');
+                }
+                $idRol = $rolId;
+            } else {
+                $idRol = obtenerIdRolInterno($conexion, $rol);
+            }
+
             $hash = password_hash($password, PASSWORD_DEFAULT);
 
             $insertar = $conexion->prepare(
-                'INSERT INTO usuarios (usuario, id_rol, contraseña, es_activo, ult_conexion)
-                 VALUES (:usuario, :id_rol, :contrasena, 1, NOW())'
+                'INSERT INTO usuarios (usuario, id_rol, contraseña, es_activo, ult_conexion, empresas_asignadas)
+                 VALUES (:usuario, :id_rol, :contrasena, 1, NOW(), :empresas_asignadas)'
             );
             $insertar->execute([
                 'usuario' => $usuario,
                 'id_rol' => $idRol,
                 'contrasena' => $hash,
+                'empresas_asignadas' => json_encode(array_values($empresasAsignadas), JSON_UNESCAPED_UNICODE),
             ]);
 
             responder(true, 'Usuario registrado en base de datos.');
@@ -391,12 +405,19 @@ try {
 
         case 'listar_usuarios':
             $consulta = $conexion->query(
-                'SELECT u.id_usuario, u.usuario, u.id_rol, u.es_activo, r.nombre_rol
+                'SELECT u.id_usuario, u.usuario, u.id_rol, u.empresas_asignadas, u.es_activo, r.nombre_rol
                  FROM usuarios u
                  LEFT JOIN roles r ON r.id_rol = u.id_rol
                  ORDER BY u.usuario ASC'
             );
             $usuarios = $consulta->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($usuarios as &$usuario) {
+                $usuario['empresas_asignadas'] = json_decode((string)($usuario['empresas_asignadas'] ?? '[]'), true);
+                if (!is_array($usuario['empresas_asignadas'])) {
+                    $usuario['empresas_asignadas'] = [];
+                }
+            }
+            unset($usuario);
             responder(true, 'Usuarios cargados desde base de datos.', [
                 'usuarios' => $usuarios,
             ]);
@@ -407,17 +428,31 @@ try {
             $usuarioNuevo = post('usuario');
             $password = post('password');
             $rol = post('rol');
+            $rolId = postInt('id_rol');
             $estado = postInt('estado', 1) === 1 ? 1 : 0;
+            $empresasAsignadas = postJsonArray('empresas_asignadas');
+            error_log('actualizar_usuario: empresas_asignadas=' . json_encode($empresasAsignadas, JSON_UNESCAPED_UNICODE));
 
-            if ($usuarioOriginal === '' || $usuarioNuevo === '' || $rol === '') {
+            if ($usuarioOriginal === '' || $usuarioNuevo === '' || ($rolId <= 0 && $rol === '')) {
                 responder(false, 'Usuario original, usuario nuevo y rol son obligatorios.');
             }
 
-            $idRol = obtenerIdRolInterno($conexion, $rol);
+            if ($rolId > 0) {
+                $validRol = $conexion->prepare('SELECT id_rol FROM roles WHERE id_rol = :id LIMIT 1');
+                $validRol->execute(['id' => $rolId]);
+                if (!$validRol->fetch()) {
+                    responder(false, 'Rol seleccionado no existe.');
+                }
+                $idRol = $rolId;
+            } else {
+                $idRol = obtenerIdRolInterno($conexion, $rol);
+            }
+
             $params = [
                 'usuario_nuevo' => $usuarioNuevo,
                 'id_rol' => $idRol,
                 'es_activo' => $estado,
+                'empresas_asignadas' => json_encode(array_values($empresasAsignadas), JSON_UNESCAPED_UNICODE),
                 'usuario_original' => $usuarioOriginal,
             ];
 
@@ -428,7 +463,8 @@ try {
                      SET usuario = :usuario_nuevo,
                          id_rol = :id_rol,
                          es_activo = :es_activo,
-                         contraseña = :contrasena
+                         contraseña = :contrasena,
+                         empresas_asignadas = :empresas_asignadas
                      WHERE usuario = :usuario_original'
                 );
                 $params['contrasena'] = $hash;
@@ -437,7 +473,8 @@ try {
                     'UPDATE usuarios
                      SET usuario = :usuario_nuevo,
                          id_rol = :id_rol,
-                         es_activo = :es_activo
+                         es_activo = :es_activo,
+                         empresas_asignadas = :empresas_asignadas
                      WHERE usuario = :usuario_original'
                 );
             }
@@ -692,10 +729,49 @@ try {
 
         case 'obtener_datos_sistema':
             $datos = construirDatosSistemaDesdeRelacional($conexion);
+
+            $usuarioActivo = [
+                'usuario' => '',
+                'rol' => '',
+                'empresas_asignadas' => [],
+            ];
+
+            $sessionUsuario = trim((string)($_SESSION['usuario'] ?? ''));
+            $sessionRol = trim((string)($_SESSION['rol'] ?? ''));
+            if ($sessionUsuario !== '') {
+                $stmt = $conexion->prepare(
+                    'SELECT u.usuario, COALESCE(r.nombre_rol, \'\') AS nombre_rol, COALESCE(u.empresas_asignadas, \'[]\') AS empresas_asignadas
+                     FROM usuarios u
+                     LEFT JOIN roles r ON r.id_rol = u.id_rol
+                     WHERE u.usuario = :usuario
+                     LIMIT 1'
+                );
+                $stmt->execute(['usuario' => $sessionUsuario]);
+                $fila = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($fila) {
+                    $empresasAsignadas = json_decode((string)$fila['empresas_asignadas'], true);
+                    if (!is_array($empresasAsignadas)) {
+                        $empresasAsignadas = [];
+                    }
+                    $usuarioActivo = [
+                        'usuario' => (string)$fila['usuario'],
+                        'rol' => strtolower(trim((string)$fila['nombre_rol'])),
+                        'empresas_asignadas' => array_values(array_map('strval', $empresasAsignadas)),
+                    ];
+                } else {
+                    $usuarioActivo = [
+                        'usuario' => $sessionUsuario,
+                        'rol' => strtolower($sessionRol),
+                        'empresas_asignadas' => [],
+                    ];
+                }
+            }
+
             // Log para depuración: verificar qué datos se están devolviendo
             error_log('Datos del sistema devueltos: ' . json_encode($datos));
             responder(true, 'Datos cargados desde tablas relacionales.', [
                 'datos' => $datos,
+                'usuario_activo' => $usuarioActivo,
             ]);
             break;
 

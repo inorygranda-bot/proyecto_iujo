@@ -128,6 +128,10 @@ function migrarEsquemaAplicacionOpcional(PDO $conexion): void
         }
     }
 
+    if (!columnaExiste($conexion, 'usuarios', 'empresas_asignadas')) {
+        $conexion->exec('ALTER TABLE usuarios ADD COLUMN empresas_asignadas LONGTEXT NULL AFTER id_rol;');
+    }
+
     // Asegurar columna id_horario en departamento
     if (!columnaExiste($conexion, 'departamento', 'id_horario')) {
         $conexion->exec('ALTER TABLE departamento ADD COLUMN id_horario INT NULL AFTER supervisor_nombre;');
