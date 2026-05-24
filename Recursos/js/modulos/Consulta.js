@@ -335,7 +335,7 @@ function renderizarListaEmpresas() {
         const btnCal = document.createElement("button");
         btnCal.type = "button";
         btnCal.className = "BotonEmpresaLista";
-        btnCal.textContent = "📅";
+        btnCal.textContent = "☷";
         btnCal.style.width = "44px";
         btnCal.title = "Ver calendario";
         btnCal.addEventListener("click", (e) => {
@@ -396,17 +396,18 @@ function seleccionarEmpresa(emp) {
                     String(e.depto || "").toLowerCase() === String(d.nombre || "").toLowerCase()
                 ).length;
                 
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td><strong>${esc(d.nombre)}</strong></td>
-                    <td>${nEmp}</td>
-                    <td>
-                        <button class="BotonAccion" onclick="verDetalleDepto('${esc(empresaSeleccionadaRuta)}','${esc(d.nombre)}')">Ver personal</button>
-                        <button class="BotonAccion" onclick="abrirEditarDepartamento('${esc(empresaSeleccionadaRuta)}','${esc(d.nombre)}')">Editar</button>
-                        <button class="BotonAccion" style="background:#b71c1c" onclick="verCalendarioDepartamento('${esc(d.nombre)}','${esc(empresaSeleccionadaRuta)}')">📅</button>
-                    </td>
-                `;
-                body.appendChild(row);
+               // Busca esta parte en tu código y cámbiala por esto:
+const row = document.createElement("tr");
+row.innerHTML = `
+    <td><strong>${esc(d.nombre)}</strong></td>
+    <td>${nEmp}</td>
+    <td style="white-space: nowrap;">
+        <button type="button" class="BotonAccion btn-con-tooltip" data-tooltip="VER PERSONAL" onclick="verDetalleDepto('${esc(empresaSeleccionadaRuta)}','${esc(d.nombre)}')">👤</button>
+        <button type="button" class="BotonAccion btn-con-tooltip" data-tooltip="EDITAR" onclick="abrirEditarDepartamento('${esc(empresaSeleccionadaRuta)}','${esc(d.nombre)}')">✎</button>
+        <button type="button" class="BotonAccion btn-con-tooltip" data-tooltip="CALENDARIO" style="background:#b71c1c; color:white;" onclick="verCalendarioDepartamento('${esc(d.nombre)}','${esc(empresaSeleccionadaRuta)}')">☷</button>
+    </td>
+`;
+body.appendChild(row);
             });
         }
     }
@@ -451,19 +452,20 @@ function verDetalleDepto(nombreEmp, nombreDepto) {
             body.innerHTML = '<tr><td colspan="6" class="TablaDatos__vacio">No hay empleados.</td></tr>';
         } else {
             empleados.forEach((emp) => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td>${esc(emp.codigo)}</td>
-                    <td>${esc(emp.nombres)} ${esc(emp.apellidos)}</td>
-                    <td><small>${esc(emp.cedula)}</small><br><small>${esc(emp.rif)}</small></td>
-                    <td>${esc(emp.cargo)}</td>
-                    <td>${esc(emp.jefe || "Sin asignar")}</td>
-                    <td>
-                        <button class="BotonAccion" onclick="abrirEditarEmpleado('${esc(emp.cedula)}')">Editar</button>
-                        <button class="BotonAccion" style="background:#b71c1c" onclick="verCalendarioDeEmpleado('${esc(emp.cedula)}','${esc(emp.nombres)}','${esc(emp.depto)}','${esc(emp.empresa)}')">📅</button>
-                    </td>
-                `;
-                body.appendChild(row);
+               // Busca esta parte en tu código y cámbiala por esto:
+const row = document.createElement("tr");
+row.innerHTML = `
+    <td>${esc(emp.codigo)}</td>
+    <td>${esc(emp.nombres)} ${esc(emp.apellidos)}</td>
+    <td><small>${esc(emp.cedula)}</small><br><small>${esc(emp.rif)}</small></td>
+    <td>${esc(emp.cargo)}</td>
+    <td>${esc(emp.jefe || "Sin asignar")}</td>
+    <td style="white-space: nowrap;">
+        <button type="button" class="BotonAccion btn-con-tooltip" data-tooltip="EDITAR" onclick="abrirEditarEmpleado('${esc(emp.cedula)}')">✎</button>
+        <button type="button" class="BotonAccion btn-con-tooltip" data-tooltip="CALENDARIO" style="background:#b71c1c; color:white;" onclick="verCalendarioDeEmpleado('${esc(emp.cedula)}','${esc(emp.nombres)}','${esc(emp.depto)}','${esc(emp.empresa)}')">📅</button>
+    </td>
+`;
+body.appendChild(row);
             });
         }
     }

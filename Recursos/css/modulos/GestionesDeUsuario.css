@@ -1,15 +1,13 @@
-/* gestiones de usuario css sincronizado con php */
-
+/*Contenedor principal */
 #SeccionGestiones { 
-    /* contenedor principal con ancho maximo y centrado */
     width: 100%; 
     max-width: 1100px; 
     margin: 20px auto; 
     padding: 0 15px; 
 }
 
+/*Encabezado de Sección*/
 .EncabezadoGestion { 
-    /* alineacion de titulo y botones superiores */
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
@@ -19,7 +17,6 @@
 }
 
 .Titulo { 
-    /* estilo del titulo principal de la seccion */
     color: #1e293b; 
     font-weight: 800; 
     font-size: 1.4rem; 
@@ -28,20 +25,17 @@
 }
 
 .Subtitulo { 
-    /* texto secundario bajo el titulo */
     color: #64748b; 
     font-size: 0.9rem; 
     margin: 4px 0 0; 
 }
 
 .BotonesHeader { 
-    /* contenedor de botones de accion en la cabecera */
     display: flex; 
     gap: 12px; 
 }
 
 .BtnCrear { 
-    /* boton para abrir formulario de creacion */
     background: #2c5f8d; 
     color: #fff; 
     border: none; 
@@ -56,15 +50,13 @@
 }
 
 .BtnCrear:hover { 
-    /* efecto hover para el boton de crear */
     background: #1e4976; 
     transform: translateY(-2px); 
     box-shadow: 0 4px 12px rgba(30, 73, 118, 0.2);
 }
 
-/* tarjetas y tablas */
+/*Tarjetas y Tablas*/
 .TarjetaGestion { 
-    /* panel blanco para contener las tablas de datos */
     background: #fff; 
     border-radius: 16px; 
     border: 1px solid #e2e8f0; 
@@ -76,7 +68,6 @@
 }
 
 .TarjetaCabecera { 
-    /* area superior interna de la tarjeta para titulo y buscador */
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
@@ -86,7 +77,6 @@
 }
 
 .Leyenda { 
-    /* etiqueta informativa dentro de la tarjeta */
     font-size: 1.1rem; 
     font-weight: 700; 
     color: #334155; 
@@ -95,7 +85,6 @@
 }
 
 table { 
-    /* configuracion base de la tabla de registros */
     width: 100%; 
     border-collapse: collapse; 
     font-size: 0.9rem; 
@@ -103,7 +92,6 @@ table {
 }
 
 th { 
-    /* cabeceras de columna con estilo gris claro */
     background: #f8fafc; 
     color: #475569; 
     padding: 14px 16px; 
@@ -115,7 +103,6 @@ th {
 }
 
 td { 
-    /* celdas de datos individuales */
     padding: 14px 16px; 
     border-bottom: 1px solid #f1f5f9; 
     vertical-align: middle; 
@@ -123,13 +110,10 @@ td {
 }
 
 tr:hover td { 
-    /* resalte de fila completa al pasar el mouse */
     background: #f1f5f9; 
 }
 
-/* badges y estados */
 .Badge { 
-    /* etiqueta pequeña para roles o departamentos */
     background: #ebf4ff; 
     color: #2c5f8d; 
     padding: 5px 10px; 
@@ -139,7 +123,6 @@ tr:hover td {
 }
 
 .Estado { 
-    /* base para indicadores de estado activo o inactivo */
     padding: 5px 10px; 
     border-radius: 8px; 
     font-size: 0.75rem; 
@@ -150,15 +133,10 @@ tr:hover td {
 .Estado.activo { background: #dcfce7; color: #15803d; }
 .Estado.inactivo { background: #fee2e2; color: #b91c1c; }
 
-/* botones de accion */
-.Acciones {
-    /* contenedor de botones editar y eliminar en tabla */
-    display: flex;
-    gap: 6px;
-}
+/*Botones de Acción*/
+.Acciones { display: flex; gap: 6px; }
 
 .Acciones button { 
-    /* estilo base para botones de icono en tabla */
     background: #f1f5f9; 
     border: 1px solid #e2e8f0; 
     width: 34px; 
@@ -170,22 +148,19 @@ tr:hover td {
 }
 
 .Acciones button:hover { 
-    /* efecto hover general para botones de tabla */
     background: #2c5f8d; 
     color: #fff; 
     border-color: #2c5f8d;
 }
 
 .Acciones .Eliminar:hover { 
-    /* color rojo para el boton de eliminar en hover */
     background: #ef4444; 
     color: #fff; 
     border-color: #ef4444;
 }
 
-/* buscador */
+/*Buscador*/
 .InputBuscador { 
-    /* campo de texto para filtrar registros */
     padding: 10px 15px; 
     border: 2px solid #e2e8f0; 
     border-radius: 10px; 
@@ -196,17 +171,14 @@ tr:hover td {
 }
 
 .InputBuscador:focus { 
-    /* estado de foco del buscador con sombra sutil */
     outline: none; 
     border-color: #2c5f8d; 
     background: #fff; 
     box-shadow: 0 0 0 4px rgba(44, 95, 141, 0.1);
 }
 
-/* modales */
-
+/*Modales */
 .Overlay {
-    /* fondo oscuro y desenfocado tras el modal */
     position: fixed;
     top: 0;
     left: 0;
@@ -215,34 +187,34 @@ tr:hover td {
     background: rgba(15, 23, 42, 0.75);
     backdrop-filter: blur(4px);
     z-index: 9999;
-    
-    /* centrado del contenido modal */
     display: none; 
     align-items: center; 
     justify-content: center;
     padding: 20px;
 }
+
 .Modal {
-    /* contenedor blanco del modal con animacion */
     background: #fff; 
-    width: 100%; 
-    max-width: 500px;
+    width: 90%; /* Ajustado para que sea más flexible */
+    max-width: 700px; /* Aumentado para mayor amplitud */
+    max-height: 90vh; /* Un poco más de altura */
     border-radius: 20px; 
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    overflow: hidden; 
+    overflow-y: auto; 
+    display: flex;
+    flex-direction: column;
     animation: modalEntrada 0.3s ease-out;
+    margin: 20px; /* Espacio extra en pantallas pequeñas */
 }
 
-.ModalAncho { max-width: 700px; }
+.Modal.ModalAncho { max-width: 650px; }
 
 @keyframes modalEntrada {
-    /* animacion de suavizado y escala al aparecer */
     from { opacity: 0; transform: scale(0.95) translateY(10px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .ModalCabecera {
-    /* franja azul superior del modal */
     background: #2c5f8d; 
     color: #fff; 
     padding: 20px 24px;
@@ -254,7 +226,6 @@ tr:hover td {
 .ModalCabecera h3 { margin: 0; font-size: 1.2rem; font-weight: 700; }
 
 .ModalCabecera button { 
-    /* boton para cerrar el modal en la esquina superior */
     background: rgba(255,255,255,0.1); 
     border: none; 
     color: #fff; 
@@ -271,18 +242,17 @@ tr:hover td {
 
 .ModalCabecera button:hover { background: rgba(255,255,255,0.2); }
 
-/* formularios */
+/*Formularios*/
 #FormRol, #FormUsuario { 
-    /* disposicion de campos dentro de los formularios */
     padding: 24px; 
     display: flex; 
     flex-direction: column; 
     gap: 18px; 
 }
 
-.Campo { border: none; padding: 0; margin: 0; }
+.Campo { border: none; padding: 0; margin-bottom: 15px; }
+
 .Campo label { 
-    /* estilo de etiquetas de formulario */
     display: block; 
     font-size: 0.75rem; 
     font-weight: 800; 
@@ -293,43 +263,24 @@ tr:hover td {
 }
 
 .Campo input, .Campo select {
-    /* estilo para inputs y selectores del formulario */
     width: 100%; 
     padding: 12px 15px; 
     background: #f1f5f9; 
     border: 2px solid #e2e8f0;
     border-radius: 10px; 
-    font-size: 0.95rem; 
+    font-size: 1rem; 
     transition: all 0.3s;
 }
 
 .Campo input:focus, .Campo select:focus { 
-    /* resalte al seleccionar un campo de entrada */
     outline: none; 
     background: #fff; 
     border-color: #2c5f8d; 
 }
 
-.FilaDoble { 
-    /* layout de dos columnas para campos de formulario */
-    display: grid; 
-    grid-template-columns: 1fr 1fr; 
-    gap: 15px; 
-}
+.FilaDoble { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 
-.Campo legend {
-    /* titulo para grupos de opciones como permisos */
-    font-size: 0.75rem; 
-    font-weight: 800; 
-    color: #2c5f8d;
-    text-transform: uppercase; 
-    margin-bottom: 10px; 
-    padding: 0 4px;
-}
-
-/* grid de checks */
 .GridPermisos {
-    /* rejilla para seleccion de multiples permisos */
     display: grid; 
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
     gap: 10px;
@@ -340,7 +291,6 @@ tr:hover td {
 }
 
 .CheckItem {
-    /* item individual de seleccion en el grid */
     display: flex; 
     align-items: center; 
     gap: 10px; 
@@ -352,32 +302,20 @@ tr:hover td {
     transition: 0.2s;
 }
 
-.CheckItem:hover { 
-    /* efecto hover sobre opciones de seleccion */
-    border-color: #2c5f8d; 
-    background: #f0f7ff; 
-}
+.CheckItem:hover { border-color: #2c5f8d; background: #f0f7ff; }
 
-.CheckItem input { 
-    /* estilo para el checkbox del item */
-    width: 18px; 
-    height: 18px; 
-    accent-color: #2c5f8d; 
-}
-
-/* footer de modales */
+/*Footer de Modales*/
 .ModalPie {
-    /* area de botones inferiores del modal */
     display: flex; 
-    justify-content: flex-end; 
-    gap: 12px;
-    margin-top: 10px; 
-    padding-top: 20px; 
-    border-top: 1px solid #f1f5f9;
+    justify-content: flex-end; /* Esto mantiene el botón a la derecha o eso se supone */
+    align-items: center;
+    gap: 15px; /* Un poco más de separación entre botones */
+    padding: 24px; /* Más espacio interno */
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc; 
 }
 
 .BtnPrimario { 
-    /* boton para guardar o confirmar cambios */
     background: #2c5f8d; 
     color: #fff; 
     border: none; 
@@ -388,7 +326,6 @@ tr:hover td {
 }
 
 .BtnSecundario { 
-    /* boton para cancelar o cerrar el modal */
     background: #f1f5f9; 
     color: #475569; 
     border: 1px solid #e2e8f0; 
@@ -398,47 +335,350 @@ tr:hover td {
     cursor: pointer;
 }
 
-/* responsive */
 @media (max-width: 768px) {
-    /* ajustes para pantallas pequeñas */
     .FilaDoble { grid-template-columns: 1fr; }
     .EncabezadoGestion { flex-direction: column; align-items: stretch; }
     .BotonesHeader { flex-direction: column; }
     .InputBuscador { width: 100%; }
 }
-
-
-.ModalAncho { max-width: 800px; }
-
-@keyframes modalScale {
-    /* animacion alternativa de escala para el modal */
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
+/*Contenedor Principal*/
+#SeccionGestiones { 
+    width: 100%; 
+    max-width: 1150px; 
+    margin: 0 auto 40px; 
+    padding: 0 10px; 
 }
 
-.CuerpoModal { padding: 20px; }
-
-.AccionTabla { 
-    /* alineacion de controles adicionales en tablas */
+.EncabezadoGestion { 
     display: flex; 
-    justify-content: flex-end; 
-    margin-bottom: 15px; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 25px; 
+    flex-wrap: wrap; 
+    gap: 15px; 
 }
 
-/* campos de formulario adicionales */
-.Campo { border: none; margin-bottom: 15px; }
+.Titulo { 
+    color: #0f172a; 
+    font-weight: 800; 
+    font-size: 1.25rem; 
+    text-transform: uppercase; 
+    margin: 0 0 12px 0; 
+}
+
+.Subtitulo { 
+    color: #64748b; 
+    font-size: 0.95rem; 
+    margin: 4px 0 0; 
+}
+
+.BotonesHeader { 
+    display: flex; 
+    gap: 12px; 
+}
+
+.BtnCrear { 
+    background: #2c5f8d; 
+    color: #fff; 
+    border: none; 
+    padding: 10px 18px; 
+    border-radius: 10px; 
+    font-weight: 700; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    transition: all 0.3s ease; 
+}
+
+.BtnCrear:hover { 
+    background: #1e4976; 
+    transform: translateY(-2px); 
+    box-shadow: 0 4px 12px rgba(30, 73, 118, 0.2);
+}
+
+.TarjetaGestion { 
+    background: #ffffff; 
+    border-radius: 16px; 
+    border: 1px solid #e2e8f0; 
+    border-left: 5px solid #2c5f8d; 
+    box-shadow: 0 8px 24px rgba(44, 95, 141, 0.08); 
+    padding: 40px; 
+    overflow-x: auto; 
+    margin-bottom: 25px; 
+}
+
+.TarjetaCabecera { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 20px; 
+    flex-wrap: wrap; 
+    gap: 10px; 
+}
+
+.Leyenda { 
+    font-size: 1.25rem; 
+    font-weight: 800; 
+    color: #0f172a; 
+    margin: 0; 
+    text-transform: uppercase; 
+}
+
+table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    font-size: 0.95rem; 
+    min-width: 750px; 
+}
+
+th { 
+    background: #f8fafc; 
+    color: #475569; 
+    padding: 14px 16px; 
+    text-align: left; 
+    font-size: 0.75rem; 
+    text-transform: uppercase; 
+    font-weight: 700;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+td { 
+    padding: 14px 16px; 
+    border-bottom: 1px solid #f1f5f9; 
+    vertical-align: middle; 
+    color: #0f172a;
+}
+
+tr:hover td { 
+    background: #f1f5f9; 
+}
+
+.Badge { 
+    background: #ebf4ff; 
+    color: #2c5f8d; 
+    padding: 5px 10px; 
+    border-radius: 8px; 
+    font-size: 0.8rem; 
+    font-weight: 700; 
+}
+
+.Estado { 
+    padding: 5px 10px; 
+    border-radius: 8px; 
+    font-size: 0.75rem; 
+    font-weight: 700; 
+    display: inline-block;
+}
+
+.Estado.activo { background: #dcfce7; color: #15803d; }
+.Estado.inactivo { background: #fee2e2; color: #b91c1c; }
+
+.Acciones { display: flex; gap: 6px; }
+
+.Acciones button { 
+    background: #f1f5f9; 
+    border: 1px solid #e2e8f0; 
+    width: 34px; 
+    height: 34px; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    color: #64748b; 
+    transition: all 0.2s; 
+}
+
+.Acciones button:hover { 
+    background: #2c5f8d; 
+    color: #fff; 
+    border-color: #2c5f8d;
+}
+
+.Acciones .Eliminar:hover { 
+    background: #ef4444; 
+    color: #fff; 
+    border-color: #ef4444;
+}
+
+.InputBuscador { 
+    padding: 12px 15px; 
+    border: 2px solid #e2e8f0; 
+    border-radius: 10px; 
+    background: #f8fafc; 
+    width: 250px; 
+    font-size: 1rem; 
+    transition: all 0.3s;
+}
+
+.InputBuscador:focus { 
+    outline: none; 
+    border-color: #2c5f8d; 
+    background: #fff; 
+    box-shadow: 0 0 0 4px rgba(44, 95, 141, 0.1);
+}
+
+
+.Overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: none; 
+    align-items: center; 
+    justify-content: center;
+    padding: 20px;
+}
+
+.Modal {
+    background: #fff; 
+    width: 100%; 
+    max-width: 500px;
+    max-height: 85vh;
+    border-radius: 20px; 
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow-y: auto; 
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: modalEntrada 0.3s ease-out;
+}
+
+.Modal.ModalAncho { max-width: 900px; }
+
+@keyframes modalEntrada {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.ModalCabecera {
+    background: #2c5f8d; 
+    color: #fff; 
+    padding: 20px 24px;
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+}
+
+.ModalCabecera h3 { margin: 0; font-size: 1.2rem; font-weight: 700; }
+
+.ModalCabecera button { 
+    background: rgba(255,255,255,0.1); 
+    border: none; 
+    color: #fff; 
+    width: 32px; 
+    height: 32px; 
+    border-radius: 8px; 
+    font-size: 1.2rem; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.ModalCabecera button:hover { background: rgba(255,255,255,0.2); }
+
+
+#FormRol, #FormUsuario { 
+    padding: 24px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 18px; 
+}
+
+.Campo { border: none; padding: 0; margin-bottom: 15px; }
+
+.Campo label { 
+    display: block; 
+    font-size: 0.75rem; 
+    font-weight: 800; 
+    color: #475569; 
+    margin-bottom: 6px; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px;
+}
+
+.Campo input, .Campo select {
+    width: 100%; 
+    padding: 12px 15px; 
+    background: #f1f5f9; 
+    border: 2px solid #e2e8f0;
+    border-radius: 10px; 
+    font-size: 1rem; 
+    color: #0f172a;
+    transition: all 0.3s;
+}
+
+.Campo input:focus, .Campo select:focus { 
+    outline: none; 
+    background: #fff; 
+    border-color: #2c5f8d; 
+}
+
 .FilaDoble { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 
-/* botones adicionales */
-.BtnPrimario { background: #2c5f8d; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-.BtnSecundario { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 12px 20px; border-radius: 8px; cursor: pointer; }
-
-/*esto es el arregleishon de la tarjeta de nuevo usuario*/
-.Overlay.ModalAncho {
-    width: 100%;
-    max-width: 100%;
+.GridPermisos {
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
+    gap: 10px;
+    background: #f8fafc; 
+    padding: 15px; 
+    border-radius: 12px; 
+    border: 2px solid #e2e8f0;
 }
 
-.Overlay.ModalAncho .Modal {
-    max-width: 650px;
+.CheckItem {
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+    padding: 10px;
+    background: #fff; 
+    border-radius: 8px; 
+    cursor: pointer;
+    border: 1px solid #e2e8f0; 
+    transition: 0.2s;
+}
+
+.CheckItem:hover { border-color: #2c5f8d; background: #f0f7ff; }
+
+
+.ModalPie {
+    display: flex; 
+    justify-content: flex-end; 
+    gap: 12px;
+    padding: 20px 24px; 
+    border-top: 1px solid #f1f5f9;
+    background: #fafafa;
+}
+
+.BtnPrimario { 
+margin-left: auto;
+    background: #2c5f8d; 
+    color: #fff; 
+    border: none; 
+    padding: 12px 24px; 
+    border-radius: 10px; 
+    font-weight: 700; 
+    cursor: pointer;
+}
+
+.BtnSecundario { 
+    background: #f1f5f9; 
+    color: #475569; 
+    border: 1px solid #e2e8f0; 
+    padding: 12px 24px; 
+    border-radius: 10px; 
+    font-weight: 700; 
+    cursor: pointer;
+}
+
+
+@media (max-width: 768px) {
+    .FilaDoble { grid-template-columns: 1fr; }
+    .EncabezadoGestion { flex-direction: column; align-items: stretch; }
+    .BotonesHeader { flex-direction: column; }
+    .InputBuscador { width: 100%; }
 }

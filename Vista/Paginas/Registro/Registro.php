@@ -9,15 +9,10 @@
 <section id="Registro" class="Principal">
 
 
-    <header class="Encabezado">
-
-        <h2 class="Titulo">Registro de empresa</h2>
-
-        <p class="Subtitulo">Registre únicamente los datos de la empresa. Departamentos, empleados y supervisores se gestionan desde la sección de consulta.</p>
-
-    </header>
-
-
+ <section class="Tarjeta-Intro">
+        <h2>Registro de empresa</h2>
+        <p>Registre únicamente los datos de la empresa. Departamentos, empleados y supervisores se gestionan desde la sección de consulta.</p>
+    </section>
 
     <article id="CajaEmpresa" class="Tarjeta">
 
