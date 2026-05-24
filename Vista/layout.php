@@ -4,13 +4,21 @@
 
 declare(strict_types=1);
 
-//$p Almacena el nombre del módulo actual y se fuerza a que sea un string para que no de valores locotrocos.
-//$sesionClienteJson Guarda los datos de la sesión del usuario en formato JSON
-//$basePath Almacena la ruta base del proyecto
+$p = 'inicio';
+$sesionClienteJson = '{}';
+$basePath = __DIR__ . '/..';
 
-$p = (string)$viewData['modulo'];
-$sesionClienteJson = (string)$viewData['sesionClienteJson'];
-$basePath = (string)$viewData['basePath'];
+if (isset($viewData) && is_array($viewData)) {
+    if (isset($viewData['modulo'])) {
+        $p = (string)$viewData['modulo'];
+    }
+    if (isset($viewData['sesionClienteJson'])) {
+        $sesionClienteJson = (string)$viewData['sesionClienteJson'];
+    }
+    if (isset($viewData['basePath'])) {
+        $basePath = (string)$viewData['basePath'];
+    }
+}
 
 ?>
 
@@ -35,7 +43,14 @@ $basePath = (string)$viewData['basePath'];
     }
     if ($p === 'horarios') echo '<link rel="stylesheet" href="./Recursos/css/modulos/Calendario.css">';
     if ($p === 'gestion') echo '<link rel="stylesheet" href="./Recursos/css/modulos/GestionesDeUsuario.css">';
-    if ($p === 'reportes') echo '<link rel="stylesheet" href="./Recursos/css/modulos/Reportes.css">';
+    if ($p === 'reportes') {
+        echo '<link rel="stylesheet" href="./Recursos/css/modulos/Reportes.css">';
+        echo '<link rel="stylesheet" href="./Recursos/css/modulos/GestionesDeUsuario.css">';
+    }
+    if ($p === 'inicio') {
+        echo '<link rel="stylesheet" href="./Recursos/css/modulos/GestionesDeUsuario.css">';
+        echo '<link rel="stylesheet" href="./Recursos/css/modulos/Inicio.css">';
+    }
     if ($p === 'auditorias') echo '<link rel="stylesheet" href="./Recursos/css/modulos/Auditorias.css">';
     ?>
 
@@ -89,6 +104,10 @@ if ($p === 'horarios' || $p === 'consulta') {
 if ($p === 'gestion') echo '<script src="./Recursos/js/modulos/GestionesDeUsuario.js"></script>';
 if ($p === 'reportes') echo '<script src="./Recursos/js/modulos/Reportes.js"></script>';
 if ($p === 'auditorias') echo '<script src="./Recursos/js/modulos/Auditorias.js"></script>';
+if ($p === 'inicio') {
+    echo '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>';
+    echo '<script src="./Recursos/js/modulos/Inicio.js"></script>';
+}
 ?>
 </body>
 </html>

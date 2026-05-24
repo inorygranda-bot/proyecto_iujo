@@ -5,6 +5,21 @@ header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../../Infraestructura/conexionBD.php';
 require_once __DIR__ . '/../../Infraestructura/helpers_gestion_bd.php';
+require_once __DIR__ . '/../Auditorias/AuditoriaServicio.php';
+
+function registrarAuditoriaDesdeSesion(PDO $conexion, string $accion, string $descripcion): void
+{
+    if (!isset($_SESSION['usuario']) || trim((string)$_SESSION['usuario']) === '') {
+        return;
+    }
+
+    try {
+        $servicio = new AuditoriaServicio($conexion);
+        $servicio->registrarPorLogin((string)$_SESSION['usuario'], $accion, $descripcion);
+    } catch (Throwable $e) {
+        error_log('registrarAuditoriaDesdeSesion: ' . $e->getMessage());
+    }
+}
 
 function responder(bool $ok, string $mensaje, array $data = []): void
 {
@@ -255,6 +270,12 @@ try {
                 'nombre' => $nombre,
                 'causa' => $causa,
             ]);
+
+            registrarAuditoriaDesdeSesion(
+                $conexion,
+                'Creo Empresa',
+                "Empresa: {$nombre} (RIF: {$rif})"
+            );
 
             responder(true, 'Empresa registrada en base de datos.');
             break;
@@ -700,9 +721,6 @@ try {
             break;
 
         case 'guardar_datos_sistema':
-            // ====================================================================
-            // INICIAR TRANSACCIÓN para asegurar que todas las operaciones se guarden juntas
-            // ====================================================================
             $conexion->beginTransaction();
             error_log("guardar_datos_sistema: Transacción iniciada");
 
@@ -723,9 +741,6 @@ try {
                 $horarios = $calendarios['horarios'] ?? [];
                 error_log("guardar_datos_sistema: horarios a guardar=" . json_encode($horarios));
 
-                // ====================================================================
-                // 1. Guardar horario general (SIEMPRE lo guardamos, incluso si parece vacío)
-                // ====================================================================
                 error_log("guardar_datos_sistema: INICIO guardado de horario general");
                 // Buscar si ya existe un horario con nombre 'general'
                 $st = $conexion->prepare('SELECT id_horarios FROM horarios WHERE nombre_horario = :n LIMIT 1');
@@ -742,9 +757,8 @@ try {
                 );
                 error_log("guardar_datos_sistema: FIN guardado de horario general, ID final=" . $idHorarioGeneral);
 
-                // ====================================================================
-                // 2. Guardar horarios de empresas, departamentos y empleados
-                // ====================================================================
+                // Guardar horarios
+
                 foreach (['empresas', 'departamentos', 'empleados'] as $tipoEntidad) {
                     error_log("guardar_datos_sistema: Procesando tipoEntidad=" . $tipoEntidad);
                     if (isset($horarios[$tipoEntidad]) && is_array($horarios[$tipoEntidad])) {
@@ -791,9 +805,6 @@ try {
                     }
                 }
 
-                // ====================================================================
-                // 3. Guardar el resto de la información de calendarios como JSON
-                // ====================================================================
                 $calendariosParaJson = $calendarios;
                 unset($calendariosParaJson['horarios']); // Excluir horarios porque ya los guardamos relacionalmente
 
@@ -803,21 +814,15 @@ try {
                 // Guardar la sección de incidencias también en formato JSON
                 guardarJsonConfig($conexion, 'incidencias', $entrada['incidencias'] ?? []);
 
-                // ====================================================================
-                // CONFIRMAR TRANSACCIÓN - todo salió bien!
-                // ====================================================================
                 $conexion->commit();
                 error_log("guardar_datos_sistema: Transacción confirmada (commit)");
 
                 // Responder con éxito
                 responder(true, 'Preferencias guardadas en base de datos.');
             } catch (Throwable $e) {
-                // ====================================================================
-                // DESHACER TRANSACCIÓN si hubo un error
-                // ====================================================================
                 $conexion->rollBack();
                 error_log("guardar_datos_sistema: Error en transacción, rollback ejecutado: " . $e->getMessage() . " - " . $e->getTraceAsString());
-                throw $e; // Volver a lanzar la excepción para que se maneje en el catch general
+                throw $e; 
             }
             break;
 
@@ -826,6 +831,75 @@ try {
             responder(true, 'Roles cargados desde base de datos.', [
                 'roles' => $roles,
             ]);
+            break;
+
+        case 'importar_txt_asistencia':
+            // Importar archivo TXT de asistencia a la tabla asistencia
+            require_once __DIR__ . '/../Incidencias/IncidenciaServicio.php';
+            $servicio = new IncidenciaServicio($conexion);
+
+            $contenido = '';
+
+            // Recuperar el texto enviado desde el FormData del JS
+            if (isset($_POST['es_texto_directo']) && $_POST['es_texto_directo'] === 'true') {
+                $contenido = $_POST['contenido_archivo'] ?? '';
+            } 
+
+            if (trim($contenido) === '') {
+                responder(false, "El servidor recibió datos vacíos. Asegúrate de que el archivo contenga texto de asistencia.");
+            }
+
+            // Crear el archivo físico temporal en el entorno de PHP para el servicio
+            $directorioTemporal = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR);
+            $rutaTemporal = $directorioTemporal . DIRECTORY_SEPARATOR . 'asistencia_procesar_' . uniqid() . '.txt';
+            
+            if (file_put_contents($rutaTemporal, $contenido) === false) {
+                responder(false, 'Error interno: No se pudo escribir el archivo temporal en el servidor.');
+            }
+
+            clearstatcache(true, $rutaTemporal);
+
+            // Iniciar transacción de Base de Datos
+            $conexion->beginTransaction();
+
+            try {
+                // Se ejecuta el método que lee e inserta en la tabla de asistencias
+                $resultado = $servicio->importarTXT($rutaTemporal);
+                
+                $conexion->commit();
+
+                if (file_exists($rutaTemporal)) {
+                    @unlink($rutaTemporal);
+                }
+                
+                responder(true, 'Importación completada con éxito.', $resultado);
+
+            } catch (Throwable $e) {
+                $conexion->rollBack();
+                if (file_exists($rutaTemporal)) {
+                    @unlink($rutaTemporal);
+                }
+                error_log("Error crítico en importar_txt_asistencia: " . $e->getMessage());
+                responder(false, 'Error interno al procesar las líneas del archivo: ' . $e->getMessage());
+            }
+            break;
+
+        case 'obtener_asistencias':
+
+            // Obtener asistencias por rango de fechas
+
+            require_once __DIR__ . '/../Incidencias/IncidenciaServicio.php';
+            $servicio = new IncidenciaServicio($conexion);
+
+            $fechaInicio = post('fecha_inicio');
+            $fechaFin = post('fecha_fin');
+
+            if ($fechaInicio === '' || $fechaFin === '') {
+                responder(false, 'Se requieren las fechas de inicio y fin.');
+            }
+
+            $asistencias = $servicio->obtenerAsistencias($fechaInicio, $fechaFin);
+            responder(true, 'Asistencias cargadas.', ['asistencias' => $asistencias]);
             break;
 
         case 'persistir_rol':
@@ -889,55 +963,11 @@ try {
             responder(false, 'Use la acción persistir_rol o eliminar_rol_por_id.');
             break;
 
-        case 'obtener_auditorias':
-            $consultaAud = $conexion->query(
-                'SELECT u.usuario AS usuario, a.accion, COALESCE(a.descripcion, \'\') AS detalle,
-                        DATE_FORMAT(a.fecha_hora, \'%Y-%m-%d %H:%i:%s\') AS fecha
-                 FROM auditorias a
-                 INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
-                 ORDER BY a.fecha_hora DESC'
-            );
-
-            /** @var list<array<string, string>> */
-            $auditorias = $consultaAud->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-            responder(true, 'Auditorías cargadas desde base de datos.', [
-                'auditorias' => $auditorias,
-            ]);
-            break;
-
-        case 'registrar_auditoria':
-            $usuario = post('usuario');
-            $accionAuditoria = post('accion_auditoria');
-            $descripcionAuditoria = post('descripcion'); // Aqui LUIS TENIA "DETALLE" EN VES DE "DESCRIPCION" que sepone que fue el nombre que el mismo le PUSO
-
-            if ($usuario === '' || $accionAuditoria === '' || $descripcionAuditoria === '') {
-                responder(false, 'Usuario, acción y descripción de auditoría son obligatorios.');
-            }
-
-            $idUser = idUsuarioPorLogin($conexion, $usuario);
-            if ($idUser === null) {
-                responder(false, 'No se encontró el usuario para registrar auditoría.');
-            }
-
-            $ins = $conexion->prepare(
-                'INSERT INTO auditorias (id_usuario, accion, descripcion, fecha_hora)
-                 VALUES (:id, :acc, :descr, NOW())'
-            );
-            $ins->execute([
-                'id' => $idUser,
-                'acc' => $accionAuditoria,
-                'descr' => $descripcionAuditoria, 
-            ]);
-
-            responder(true, 'Auditoría registrada.');
-            break;
-
         default:
             responder(false, 'Acción no reconocida.');
     }
 } catch (Throwable $error) {
     error_log('Error en gestion_api.php: ' . $error->getMessage());
-    // Temporalmente, devolvemos el mensaje de error para depuración
+    
     responder(false, 'Error de base de datos: ' . $error->getMessage());
 }

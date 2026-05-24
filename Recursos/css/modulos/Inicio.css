@@ -1,0 +1,131 @@
+#PanelInicio {
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.PanelInicio__cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.PanelInicio__cabecera h2 {
+    margin: 0 0 6px;
+    color: #1e293b;
+    font-size: 1.4rem;
+}
+
+.PanelInicio__cabecera h2 i {
+    color: #2c5f8d;
+    margin-right: 8px;
+}
+
+.PanelInicio__cabecera p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.PanelInicio__filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.PanelInicio__filtros label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+}
+
+.PanelInicio__select,
+.PanelInicio__input {
+    padding: 10px 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    font-size: 0.9rem;
+}
+
+.PanelInicio__input {
+    width: 90px;
+}
+
+.PanelInicio__periodo {
+    margin: 0 0 18px;
+    font-weight: 700;
+    color: #2c5f8d;
+    font-size: 0.95rem;
+}
+
+.PanelInicio__graficas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.PanelInicio__tarjeta {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.PanelInicio__tarjeta h3 {
+    margin: 0 0 4px;
+    color: #1e293b;
+    font-size: 1rem;
+}
+
+.PanelInicio__sub {
+    margin: 0 0 14px;
+    color: #94a3b8;
+    font-size: 0.8rem;
+}
+
+.PanelInicio__resumen {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+}
+
+.PanelInicio__chip {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #2c5f8d;
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.PanelInicio__chip strong {
+    display: block;
+    font-size: 1.4rem;
+    color: #1e293b;
+}
+
+.PanelInicio__chip span {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.PanelInicio__chip--asistencia { border-left-color: #27ae60; }
+.PanelInicio__chip--inasistencia { border-left-color: #ef4444; }
+.PanelInicio__chip--justificadas { border-left-color: #2c5f8d; }
+.PanelInicio__chip--retardos { border-left-color: #3d7ab3; }
+
+@media (max-width: 768px) {
+    .PanelInicio__cabecera {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

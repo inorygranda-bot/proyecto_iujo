@@ -38,6 +38,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const resultado = await respuesta.json();
             if (resultado?.ok && Array.isArray(resultado?.data?.auditorias)) {
                 auditorias = resultado.data.auditorias;
+            } else if (!resultado?.ok) {
+                console.error("API auditorias:", resultado?.mensaje || "respuesta no valida");
+                if (cuerpoTablaAuditoria) {
+                    cuerpoTablaAuditoria.innerHTML = '<tr><td colspan="4" class="TablaAuditoria__vacio">'
+                        + escaparHtml(resultado?.mensaje || "Error al cargar auditorias.") + '</td></tr>';
+                }
+                return;
             }
         } catch (e) {
             console.error("Error al leer auditorías desde BD en Auditorias.js:", e);
@@ -81,3 +88,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // para mostrar los registros al cargar la página de auditorías.
     cargarAuditorias();
 });
+
+function escaparHtml(texto) {
+    return String(texto || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}

@@ -87,24 +87,40 @@ class ServicioAuditoria {
         this.usuarioActivo = usuarioActivo;
     }
 
-    registrar(accion, detalle) {
-        if (!this.usuarioActivo) {
-            return;
+    async registrar(accion, detalle) {
+        const sesion = window.usuarioActivo || this.usuarioActivo;
+        if (!sesion) {
+            console.warn("Auditoria: no hay sesion activa.");
+            return false;
         }
 
-        const usuario = this.usuarioActivo.usuario || "Desconocido";
-        fetch(URL_GESTION_API, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
-            body: new URLSearchParams({
-                accion: "registrar_auditoria",
-                usuario: usuario,
-                accion_auditoria: accion,
-                detalle: detalle,
-            }),
-        }).catch((err) => {
+        const params = {
+            accion: "registrar_auditoria",
+            accion_auditoria: accion,
+            descripcion: detalle || "",
+            usuario: sesion.usuario || "",
+        };
+
+        if (sesion.id_usuario) {
+            params.id_usuario = String(sesion.id_usuario);
+        }
+
+        try {
+            const respuesta = await fetch(URL_GESTION_API, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+                body: new URLSearchParams(params),
+            });
+            const resultado = await respuesta.json();
+            if (!resultado?.ok) {
+                console.error("Auditoria no guardada:", resultado?.mensaje || "error desconocido");
+                return false;
+            }
+            return true;
+        } catch (err) {
             console.error("No se pudo registrar la auditoria en BD:", err);
-        });
+            return false;
+        }
     }
 }
 

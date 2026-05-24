@@ -162,6 +162,32 @@ function migrarEsquemaAplicacionOpcional(PDO $conexion): void
         }
     }
 
+    if (!tablaExiste($conexion, 'auditorias')) {
+        $conexion->exec(
+            'CREATE TABLE auditorias (
+                id_auditoria INT AUTO_INCREMENT PRIMARY KEY,
+                id_usuario INT NOT NULL,
+                accion VARCHAR(255) NOT NULL,
+                descripcion TEXT NOT NULL,
+                fecha_hora DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_auditoria_fecha (fecha_hora),
+                INDEX idx_auditoria_usuario (id_usuario)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+        );
+        if (tablaExiste($conexion, 'usuarios') && !constraintExiste($conexion, 'fk_auditoria_usuario')) {
+            try {
+                $conexion->exec(
+                    'ALTER TABLE auditorias
+                     ADD CONSTRAINT fk_auditoria_usuario FOREIGN KEY (id_usuario)
+                     REFERENCES usuarios(id_usuario)
+                     ON DELETE CASCADE ON UPDATE CASCADE'
+                );
+            } catch (Throwable $e) {
+                error_log('Migración FK auditoria->usuario: ' . $e->getMessage());
+            }
+        }
+    }
+
     // Asegurar que exista un horario general por defecto
     $st = $conexion->prepare('SELECT COUNT(*) FROM horarios WHERE nombre_horario = :n');
     $st->execute(['n' => 'general']);
@@ -220,7 +246,7 @@ function guardarJsonConfig(PDO $conexion, string $clave, array $valor): void
  */
 function asegurarPermisosModulos(PDO $conexion): void
 {
-    $modulos = ['registro', 'consulta', 'horarios', 'reportes', 'gestion'];
+    $modulos = ['registro', 'consulta', 'horarios', 'reportes', 'gestion', 'auditorias'];
     foreach ($modulos as $m) {
         $st = $conexion->prepare('SELECT id_permisos FROM permisos WHERE nombre_permisos = :n LIMIT 1');
         $st->execute(['n' => $m]);
@@ -556,7 +582,7 @@ function idUsuarioPorLogin(PDO $conexion, string $usuario): ?int
     $st = $conexion->prepare('SELECT id_usuario FROM usuarios WHERE usuario = :u LIMIT 1');
     $st->execute(['u' => $usuario]);
     $f = $st->fetch(PDO::FETCH_ASSOC);
-    return (int)$f['id_usuario'] ?? null;
+    return $f ? (int)$f['id_usuario'] : null;
 }
 
 function obtenerHorarioPorId(PDO $conexion, int $idHorario): ?array

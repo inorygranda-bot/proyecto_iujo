@@ -288,3 +288,28 @@
 #Reportes .ReportesBtnEliminar:hover {
     background: #dc2626;
 }
+
+/* Campos de modales (reutiliza clases de GestionesDeUsuario) */
+#Reportes .Campo textarea,
+#Reportes .Campo select {
+    width: 100%;
+    padding: 12px 15px;
+    background: #f1f5f9;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    transition: all 0.3s;
+    box-sizing: border-box;
+}
+
+#Reportes .Campo textarea:focus,
+#Reportes .Campo select:focus {
+    outline: none;
+    background: #fff;
+    border-color: #2c5f8d;
+}
+
+#Reportes .Overlay[style*="display: flex"],
+#Reportes .Overlay[style*="display:flex"] {
+    display: flex !important;
+}

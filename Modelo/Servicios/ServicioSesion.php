@@ -8,7 +8,7 @@ require_once __DIR__ . '/../SesionUsuario.php';
 final class ServicioSesion
 {
     /** @var string[] */
-    private array $modsCompletos = ['registro', 'consulta', 'horarios', 'reportes', 'gestion'];
+    private array $modsCompletos = ['registro', 'consulta', 'horarios', 'reportes', 'gestion', 'auditorias'];
 
     public function estaAutenticado(): bool
     {
@@ -19,43 +19,54 @@ final class ServicioSesion
     {
         $usuarioLogin = (string)($_SESSION['usuario'] ?? '');
         $nombreSesionRol = strtolower((string)($_SESSION['rol'] ?? ''));
-        $permisosModulos = $this->resolverPermisos($usuarioLogin, $nombreSesionRol);
+        $datos = $this->resolverDatosSesion($usuarioLogin, $nombreSesionRol);
 
-        return new SesionUsuario($usuarioLogin, $nombreSesionRol, $permisosModulos);
+        return new SesionUsuario(
+            $usuarioLogin,
+            $nombreSesionRol,
+            $datos['permisos'],
+            $datos['id_usuario']
+        );
     }
 
     /**
-     * @return string[]
+     * @return array{permisos: string[], id_usuario: int}
      */
-    private function resolverPermisos(string $usuarioLogin, string $nombreSesionRol): array
+    private function resolverDatosSesion(string $usuarioLogin, string $nombreSesionRol): array
     {
-        $migrarOk = false;
         $permisosModulos = [];
+        $idUsuario = 0;
 
         try {
             $pdoSesion = obtenerConexionPdo();
             migrarEsquemaAplicacionOpcional($pdoSesion);
-            $migrarOk = true;
+            $permisosModulos = obtenerModulosUsuario($pdoSesion, $usuarioLogin);
+            $idUsuario = $this->obtenerIdUsuario($pdoSesion, $usuarioLogin);
         } catch (Throwable $e) {
-            error_log('ServicioSesion migracion BD: ' . $e->getMessage());
-        }
-
-        if ($migrarOk && isset($pdoSesion)) {
-            try {
-                $permisosModulos = obtenerModulosUsuario($pdoSesion, $usuarioLogin);
-            } catch (Throwable $e) {
-                $permisosModulos = [];
-            }
+            error_log('ServicioSesion: ' . $e->getMessage());
         }
 
         if ($nombreSesionRol === 'admin' || strpos($nombreSesionRol, 'admin') !== false) {
-            return $this->modsCompletos;
+            $permisosModulos = $this->modsCompletos;
+        } elseif (
+            ($nombreSesionRol === 'analista' || strpos($nombreSesionRol, 'analista') !== false)
+            && $permisosModulos === []
+        ) {
+            $permisosModulos = ['consulta', 'horarios', 'reportes', 'auditorias'];
         }
 
-        if (($nombreSesionRol === 'analista' || strpos($nombreSesionRol, 'analista') !== false) && $permisosModulos === []) {
-            return ['consulta', 'horarios', 'reportes'];
-        }
+        return [
+            'permisos' => array_values(array_unique($permisosModulos)),
+            'id_usuario' => $idUsuario,
+        ];
+    }
 
-        return $permisosModulos;
+    private function obtenerIdUsuario(PDO $conexion, string $login): int
+    {
+        $stmt = $conexion->prepare('SELECT id_usuario FROM usuarios WHERE usuario = :u LIMIT 1');
+        $stmt->execute(['u' => $login]);
+        $fila = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $fila ? (int)$fila['id_usuario'] : 0;
     }
 }
