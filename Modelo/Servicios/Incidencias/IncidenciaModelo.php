@@ -154,20 +154,23 @@ class IncidenciaModelo
         ?string $hLlegadaAlmuerzo = null,
         ?string $hSalidaAlmuerzo = null,
         ?string $hSalida = null
-    ): int {
+    ): int|string {
         $stmt = $this->conexion->prepare(
             'INSERT INTO asistencia
              (id_empleado, fecha, h_llegada, h_llegada_almuerzo, h_salida_almuerzo, h_salida)
              VALUES (:id_empleado, :fecha, :h_llegada, :h_llegada_almuerzo, :h_salida_almuerzo, :h_salida)'
         );
-        $stmt->execute([
+        if (!$stmt->execute([
             'id_empleado' => $idEmpleado,
             'fecha' => $fecha,
             'h_llegada' => $hLlegada,
             'h_llegada_almuerzo' => $hLlegadaAlmuerzo,
             'h_salida_almuerzo' => $hSalidaAlmuerzo,
             'h_salida' => $hSalida
-        ]);
+        ])) {
+            $errorInfo = $stmt->errorInfo();
+            return "Error DB (Crear Asistencia): " . ($errorInfo[2] ?? "Desconocido");
+        }
         return (int)$this->conexion->lastInsertId();
     }
 
@@ -177,7 +180,7 @@ class IncidenciaModelo
         ?string $hLlegadaAlmuerzo = null,
         ?string $hSalidaAlmuerzo = null,
         ?string $hSalida = null
-    ): bool {
+    ): bool|string {
         $stmt = $this->conexion->prepare(
             'UPDATE asistencia
              SET h_llegada = COALESCE(:h_llegada, h_llegada),
@@ -186,13 +189,17 @@ class IncidenciaModelo
                  h_salida = COALESCE(:h_salida, h_salida)
              WHERE id_asistencia = :id_asistencia'
         );
-        return $stmt->execute([
+        if (!$stmt->execute([
             'id_asistencia' => $idAsistencia,
             'h_llegada' => $hLlegada,
             'h_llegada_almuerzo' => $hLlegadaAlmuerzo,
             'h_salida_almuerzo' => $hSalidaAlmuerzo,
             'h_salida' => $hSalida
-        ]);
+        ])) {
+            $errorInfo = $stmt->errorInfo();
+            return "Error DB (Actualizar Asistencia): " . ($errorInfo[2] ?? "Desconocido");
+        }
+        return true;
     }
 
     public function obtenerAsistenciasPorRangoFechas(string $fechaInicio, string $fechaFin): array

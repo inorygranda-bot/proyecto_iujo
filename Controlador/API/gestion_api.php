@@ -142,33 +142,41 @@ switch ($accion) {
     // Acción: importar_txt_asistencia
     // Permite importar datos de asistencia desde un archivo de texto.
     case 'importar_txt_asistencia':
-        header('Content-Type: application/json'); // La respuesta será JSON.
-        // Verificar si se ha subido un archivo y si no hubo errores en la subida.
-        if (!isset($_FILES['archivo']) || $_FILES['archivo']['error'] !== UPLOAD_ERR_OK) {
+        header('Content-Type: application/json');
+        ini_set('display_errors', '1'); // TEMPORAL: Mostrar errores en pantalla
+        error_reporting(E_ALL); // TEMPORAL: Reportar todos los errores
+
+        try {
+            if (!isset($_FILES['archivo']) || $_FILES['archivo']['error'] !== UPLOAD_ERR_OK) {
+                echo json_encode([
+                    'ok' => false,
+                    'mensaje' => 'Error al subir el archivo.'
+                ]);
+                exit;
+            }
+
+            $rutaTemporal = $_FILES['archivo']['tmp_name'];
+            $resultado = $servicio->importarTXT($rutaTemporal);
+
+            $servicioAuditoria->registrarPorLogin(
+                (string)($_SESSION['usuario'] ?? 'desconocido'),
+                'Importó Asistencias TXT',
+                'Se importaron ' . ($resultado['importados_correctamente'] ?? 0) . ' registros de asistencia.'
+            );
+
+            echo json_encode([
+                    'ok' => true,
+                    'data' => $resultado
+                ]);
+        } catch (Throwable $e) {
+            error_log('Error fatal en importar_txt_asistencia: ' . $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine());
             echo json_encode([
                 'ok' => false,
-                'mensaje' => 'Error al subir el archivo.'
+                'mensaje' => 'Error interno del servidor al importar asistencias: ' . $e->getMessage(),
+                'detalle' => $e->getFile() . ':' . $e->getLine()
             ]);
-            exit; // Terminar la ejecución.
         }
-
-        // Obtener la ruta temporal del archivo subido.
-        $rutaTemporal = $_FILES['archivo']['tmp_name'];
-        // Llamar al servicio para importar los datos.
-        $resultado = $servicio->importarTXT($rutaTemporal);
-
-        // Registrar la acción de auditoría.
-        $servicioAuditoria->registrarPorLogin(
-            (string)($_SESSION['usuario'] ?? 'desconocido'), // Usuario actual de la sesión.
-            'Importó Asistencias TXT', // Acción realizada.
-            'Se importaron ' . ($resultado['importados_correctamente'] ?? 0) . ' registros de asistencia.' // Descripción detallada.
-        );
-
-        echo json_encode([
-                'ok' => true,
-                'data' => $resultado
-            ]);
-            exit; // Terminar la ejecución.
+        exit;
 
     // Acción: obtener_tipos_incidencia
     // Obtiene y devuelve todos los tipos de incidencia configurados en el sistema.

@@ -9,11 +9,13 @@ class IncidenciaServicio
 {
     private IncidenciaModelo $modelo;
     private array $errores;
+    private array $debugMessages;
 
     public function __construct(PDO $conexion)
     {
         $this->modelo = new IncidenciaModelo($conexion);
         $this->errores = [];
+        $this->debugMessages = [];
     }
 
     // ========================================================================
@@ -28,11 +30,18 @@ class IncidenciaServicio
     private function limpiarErrores(): void
     {
         $this->errores = [];
+        $this->debugMessages = [];
     }
 
     private function agregarError(string $mensaje): void
     {
         $this->errores[] = $mensaje;
+        $this->_addDebugMessage("ERROR: " . $mensaje); // También loguear errores a debug
+    }
+
+    private function _addDebugMessage(string $mensaje): void
+    {
+        $this->debugMessages[] = $mensaje;
     }
 
     // ========================================================================
@@ -108,7 +117,11 @@ class IncidenciaServicio
             $horaStr = $partes[2];
             $empresa = $partes[3] ?? '';
 
+            $this->_addDebugMessage("Linea TXT " . ($numLinea + 1) . ": Codigo: {$codigo}, FechaStr: {$fechaStr}, HoraStr: {$horaStr}");
+
             $empleado = $this->modelo->obtenerEmpleadoPorCodigo($codigo);
+
+            $this->_addDebugMessage("Linea TXT " . ($numLinea + 1) . ": Empleado obtenido: " . print_r($empleado, true));
 
             if (!$empleado) {
                 $this->agregarError("Linea " . ($numLinea + 1) . ": El empleado con codigo {$codigo} no existe.");
@@ -145,6 +158,8 @@ class IncidenciaServicio
             $fecha = $datos['fecha'];
             $horas = $datos['horas'];
 
+            $this->_addDebugMessage("Procesando grupo: Empleado ID: {$idEmpleado}, Fecha: {$fecha}, Horas: " . implode(', ', $horas));
+
             if (count($horas) !== 4) {
                 $this->agregarError("Empleado ID {$idEmpleado} en fecha {$fecha}: Se requieren 4 marcajes, se encontraron " . count($horas) . ".");
                 continue;
@@ -158,33 +173,49 @@ class IncidenciaServicio
             $hSalida = $horas[3];
 
             $existe = $this->modelo->obtenerAsistenciaPorEmpleadoYFecha($idEmpleado, $fecha);
+            $this->_addDebugMessage("obtenerAsistenciaPorEmpleadoYFecha para ID {$idEmpleado} y Fecha {$fecha}: " . print_r($existe, true));
 
             if ($existe) {
-                $this->modelo->actualizarAsistencia(
-                    $existe['id_asistencia'],
-                    $hLlegada,
-                    $hLlegadaAlmuerzo,
-                    $hSalidaAlmuerzo,
-                    $hSalida
-                );
-                $importados++;
-            } else {
-                $this->modelo->crearAsistencia(
-                    $idEmpleado,
-                    $fecha,
-                    $hLlegada,
-                    $hLlegadaAlmuerzo,
-                    $hSalidaAlmuerzo,
-                    $hSalida
-                );
-                $importados++;
+                    $this->_addDebugMessage("Llamando a actualizarAsistencia para ID {$idEmpleado} y Fecha {$fecha}");
+                    $resultadoActualizacion = $this->modelo->actualizarAsistencia(
+                        $existe['id_asistencia'],
+                        $hLlegada,
+                        $hLlegadaAlmuerzo,
+                        $hSalidaAlmuerzo,
+                        $hSalida
+                    );
+                    $this->_addDebugMessage("Resultado de actualizarAsistencia: " . print_r($resultadoActualizacion, true));
+                    if ($resultadoActualizacion === true) {
+                        $importados++;
+                    } else {
+                        $this->_addDebugMessage("Error de actualizacion para Empleado ID {$idEmpleado} en fecha {$fecha}: " . $resultadoActualizacion);
+                        $this->agregarError("Empleado ID {$idEmpleado} en fecha {$fecha}: " . $resultadoActualizacion);
+                    }
+                } else {
+                    $this->_addDebugMessage("Llamando a crearAsistencia para ID {$idEmpleado} y Fecha {$fecha}");
+                    $resultadoCreacion = $this->modelo->crearAsistencia(
+                        $idEmpleado,
+                        $fecha,
+                        $hLlegada,
+                        $hLlegadaAlmuerzo,
+                        $hSalidaAlmuerzo,
+                        $hSalida
+                    );
+                    $this->_addDebugMessage("Resultado de crearAsistencia: " . print_r($resultadoCreacion, true));
+                    if (is_int($resultadoCreacion) && $resultadoCreacion > 0) {
+                        $importados++;
+                    } else {
+                        $this->_addDebugMessage("Error de creacion para Empleado ID {$idEmpleado} en fecha {$fecha}: " . $resultadoCreacion);
+                        $this->agregarError("Empleado ID {$idEmpleado} en fecha {$fecha}: " . $resultadoCreacion);
+                    }
             }
         }
 
         return [
             'total_registros' => $totalRegistros,
             'importados_correctamente' => $importados,
-            'errores' => $this->obtenerErrores()
+            'errores' => $this->obtenerErrores(),
+            'debug_messages' => $this->debugMessages
         ];
     }
 

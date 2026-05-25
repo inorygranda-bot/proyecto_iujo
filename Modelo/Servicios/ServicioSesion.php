@@ -7,7 +7,6 @@ require_once __DIR__ . '/../SesionUsuario.php';
 
 final class ServicioSesion
 {
-    /** @var string[] */
     private array $modsCompletos = ['registro', 'consulta', 'horarios', 'reportes', 'gestion', 'auditorias'];
 
     public function estaAutenticado(): bool
@@ -40,7 +39,7 @@ final class ServicioSesion
         try {
             $pdoSesion = obtenerConexionPdo();
             migrarEsquemaAplicacionOpcional($pdoSesion);
-            $permisosModulos = obtenerModulosUsuario($pdoSesion, $usuarioLogin);
+            $permisosModulos = $this->_obtenerModulosUsuario($pdoSesion, $usuarioLogin);
             $idUsuario = $this->obtenerIdUsuario($pdoSesion, $usuarioLogin);
         } catch (Throwable $e) {
             error_log('ServicioSesion: ' . $e->getMessage());
@@ -59,6 +58,20 @@ final class ServicioSesion
             'permisos' => array_values(array_unique($permisosModulos)),
             'id_usuario' => $idUsuario,
         ];
+    }
+
+    private function _obtenerModulosUsuario(PDO $conexion, string $login): array
+    {
+        $stmt = $conexion->prepare(
+            "SELECT p.nombre_permisos
+             FROM usuarios u
+             JOIN roles r ON u.id_rol = r.id_rol
+             JOIN rol_permisos rp ON r.id_rol = rp.id_rol
+             JOIN permisos p ON rp.id_permisos = p.id_permisos
+             WHERE u.usuario = :login AND p.nombre_permisos IN ('registro', 'consulta', 'horarios', 'reportes', 'gestion', 'auditorias')"
+        );
+        $stmt->execute(['login' => $login]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
     }
 
     private function obtenerIdUsuario(PDO $conexion, string $login): int

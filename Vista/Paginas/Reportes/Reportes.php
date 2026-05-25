@@ -6,7 +6,6 @@
 
     <header class="ReportesCabecera">
         <h2 class="ReportesTitulo">Gestion de Asistencias e Incidencias</h2>
-        <p class="ReportesSub">Importa registros, detecta inasistencias, gestiona incidencias y genera reportes.</p>
 
         <nav class="ReportesOpciones" aria-label="Secciones">
             <button type="button" class="ReportesPestaña ReportesPestaña--activa" id="BtnPestañaImportar" data-panel="panelImportar">
@@ -27,9 +26,6 @@
         </nav>
     </header>
 
-    <!-- ======================================================================
-         SECCION 1: IMPORTAR TXT DE ASISTENCIA
-         ====================================================================== -->
     <article id="panelImportar" class="ReportesPanel" role="tabpanel" aria-labelledby="BtnPestañaImportar">
         <header class="ReportesPanel__head">
             <h3>Importar Registros de Asistencia</h3>
@@ -39,20 +35,6 @@
         <section class="ReportesFormulario">
             <aside class="alert alert-info" role="note">
                 <strong>Formato del archivo TXT:</strong>
-                <code>codigo_empleado fecha(DD/MM/AA) hora(H:MM o HH:MM) nombre_empresa</code>
-                <br><br>
-                <strong>Ejemplo (4 líneas por empleado):</strong>
-                <br><code>004 24/05/26 9:00 aassa</code>
-                <br><code>004 24/05/26 12:00 aassa</code>
-                <br><code>004 24/05/26 13:00 aassa</code>
-                <br><code>004 24/05/26 17:00 aassa</code>
-                <br><br>
-                <strong>Validaciones:</strong>
-                <ul>
-                    <li>El empleado debe existir en la BD</li>
-                    <li>El empleado debe pertenecer a la empresa del TXT</li>
-                    <li>Se requieren EXACTAMENTE 4 marcajes por empleado y fecha</li>
-                </ul>
             </aside>
 
             <fieldset>
@@ -75,10 +57,7 @@
             <article id="resultado-importacion-contenido"></article>
         </aside>
     </article>
-
-    <!-- ======================================================================
-         SECCION 2: ASISTENCIAS GUARDADAS
-         ====================================================================== -->
+    
     <article id="panelAsistencias" class="ReportesPanel" role="tabpanel" aria-labelledby="BtnPestañaAsistencias" hidden>
         <header class="ReportesPanel__head d-flex justify-content-between align-items-center">
             <section>
