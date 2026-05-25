@@ -6,7 +6,7 @@ class InterfazSesionUI {
         this.usuarioActivo = this.parseSesionPhpSeguro();
     }
 
-    parseSesionPhpSeguro() {
+    parseSesionPhpSeguro() { 
         try {
             const tag = document.getElementById("__sesionPhp");
             if (!tag || !tag.textContent) return null;
@@ -14,7 +14,7 @@ class InterfazSesionUI {
             return parsed && typeof parsed === "object" ? parsed : null;
         } catch (e) {
             console.warn("__sesionPhp no es JSON valido.", e);
-            return null;
+            return null;   
         }
     }
 
@@ -26,19 +26,21 @@ class InterfazSesionUI {
         return esAdmin || tienePermiso;
     }
 
-    mostrarInfoUsuario() {
+   mostrarInfoUsuario() {
         if (!this.usuarioActivo) return;
 
         const spanUser = document.getElementById("NombreUsuarioUI");
         const spanRol = document.getElementById("MensajeRol");
 
+        // Esto limpia el nombre en el segundo campo si no quieres duplicarlo
         if (spanUser) {
-            const nombre = this.usuarioActivo.nombre || this.usuarioActivo.usuario || "Usuario";
-            spanUser.textContent = nombre;
+            spanUser.textContent = ""; 
         }
+
         if (spanRol) {
-            const rolLimpio = (this.usuarioActivo.rol || "").replace("rol_", "").toUpperCase();
-            spanRol.innerHTML = `Usted ingreso como: <strong>${rolLimpio}</strong>`;
+            
+            const nombre = this.usuarioActivo.usuario || "Usuario";
+            spanRol.innerHTML = `Usted ingresó como: <strong>${nombre}</strong>`;
         }
     }
 
@@ -87,40 +89,24 @@ class ServicioAuditoria {
         this.usuarioActivo = usuarioActivo;
     }
 
-    async registrar(accion, detalle) {
-        const sesion = window.usuarioActivo || this.usuarioActivo;
-        if (!sesion) {
-            console.warn("Auditoria: no hay sesion activa.");
-            return false;
+    registrar(accion, detalle) {
+        if (!this.usuarioActivo) {
+            return;
         }
 
-        const params = {
-            accion: "registrar_auditoria",
-            accion_auditoria: accion,
-            descripcion: detalle || "",
-            usuario: sesion.usuario || "",
-        };
-
-        if (sesion.id_usuario) {
-            params.id_usuario = String(sesion.id_usuario);
-        }
-
-        try {
-            const respuesta = await fetch(URL_GESTION_API, {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
-                body: new URLSearchParams(params),
-            });
-            const resultado = await respuesta.json();
-            if (!resultado?.ok) {
-                console.error("Auditoria no guardada:", resultado?.mensaje || "error desconocido");
-                return false;
-            }
-            return true;
-        } catch (err) {
+        const usuario = this.usuarioActivo.usuario || "Desconocido";
+        fetch(URL_GESTION_API, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+            body: new URLSearchParams({
+                accion: "registrar_auditoria",
+                usuario: usuario,
+                accion_auditoria: accion,
+                detalle: detalle,
+            }),
+        }).catch((err) => {
             console.error("No se pudo registrar la auditoria en BD:", err);
-            return false;
-        }
+        });
     }
 }
 
@@ -140,7 +126,29 @@ document.addEventListener("DOMContentLoaded", () => {
     interfazSesion.aplicarMenuSegunRol();
 });
 
+
 window.cerrarSesion = cerrarSesion;
 window.verificarAcceso = (modulo) => interfazSesion.verificarAcceso(modulo);
 window.usuarioActivo = interfazSesion.usuarioActivo;
 window.registrarAuditoria = (accion, detalle) => servicioAuditoria.registrar(accion, detalle);
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const btnHamburguesa = document.createElement("button");
+    btnHamburguesa.className = "BtnMenu";
+    btnHamburguesa.innerHTML = '<i class="fas fa-bars"></i>';
+    
+   
+    const header = document.querySelector(".TopHeader");
+    const h1 = header.querySelector("h1");
+    header.insertBefore(btnHamburguesa, h1);
+
+  
+    const sidebar = document.querySelector(".Sidebar");
+    const mainContent = document.querySelector(".MainContent");
+
+    btnHamburguesa.addEventListener("click", () => {
+        sidebar.classList.toggle("oculto");
+        mainContent.classList.toggle("expandido");
+    });
+});
