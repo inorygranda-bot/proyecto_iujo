@@ -25,7 +25,7 @@ $anioActual = (int)date('Y');
                 }
                 ?>
             </select>
-            <label for="inicio-filtro-anio">Anio</label>
+            <label for="inicio-filtro-anio">Año</label>
             <input type="number" id="inicio-filtro-anio" class="PanelInicio__input" min="2020" max="2099" value="<?php echo $anioActual; ?>">
             <button type="button" id="BtnActualizarGraficas" class="BtnPrimario">Actualizar</button>
         </section>

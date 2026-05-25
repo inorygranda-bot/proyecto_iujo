@@ -164,6 +164,82 @@ function postInt(string $key, int $default = 0): int
     return (int)($_POST[$key] ?? $default);
 }
 
+/**
+ * Guarda los permisos asignados a un rol en la tabla `roles_permisos`.
+ * Primero elimina todos los permisos existentes para el rol y luego inserta los nuevos.
+ *
+ * @param PDO $conexion Conexión a la base de datos.
+ * @param int $idRol ID del rol.
+ * @param array $permisosArr Array de nombres de permisos a asignar.
+ * @return void
+ */
+function guardarRolesPermisosParaRol(PDO $conexion, int $idRol, array $permisosArr): void
+{
+    // Eliminar todos los permisos existentes para este rol para evitar duplicados y manejar eliminaciones.
+    $conexion->prepare('DELETE FROM roles_permisos WHERE id_rol = :id_rol')
+        ->execute(['id_rol' => $idRol]);
+
+    // Si hay nuevos permisos para asignar, proceder con la inserción.
+    if (!empty($permisosArr)) {
+        $sql = 'INSERT INTO roles_permisos (id_rol, id_permisos) VALUES ';
+        $values = [];
+        $params = [];
+        // Iterar sobre cada nombre de permiso para encontrar su ID y construir la consulta de inserción.
+        foreach ($permisosArr as $idx => $permisoNombre) {
+            // Obtener el id_permisos a partir del nombre_permisos de la tabla `permisos`.
+            $st = $conexion->prepare('SELECT id_permisos FROM permisos WHERE nombre_permisos = :nombre LIMIT 1');
+            $st->execute(['nombre' => $permisoNombre]);
+            $idPermisos = $st->fetchColumn();
+
+            // Si el ID del permiso se encuentra, añadirlo a la lista para la inserción masiva.
+            if ($idPermisos) {
+                $values[] = '(:id_rol_' . $idx . ', :id_permisos_' . $idx . ')';
+                $params['id_rol_' . $idx] = $idRol;
+                $params['id_permisos_' . $idx] = (int)$idPermisos;
+            }
+        }
+        // Ejecutar la inserción si hay permisos válidos.
+        if (!empty($values)) {
+            $sql .= implode(', ', $values);
+            $conexion->prepare($sql)->execute($params);
+        }
+    }
+}
+
+/**
+ * Obtiene una lista de roles con sus permisos asociados desde la base de datos.
+ *
+ * @param PDO $conexion Conexión a la base de datos.
+ * @return array Retorna un array de roles, cada uno incluyendo su ID, nombre y un array de nombres de permisos.
+ */
+function obtenerRolesClienteDesdeBd(PDO $conexion): array
+{
+    $roles = [];
+    // Consultar todos los roles ordenados alfabéticamente.
+    $stmtRoles = $conexion->query('SELECT id_rol, nombre_rol FROM roles ORDER BY nombre_rol ASC');
+    // Iterar sobre cada rol para obtener sus permisos.
+    while ($rol = $stmtRoles->fetch(PDO::FETCH_ASSOC)) {
+        $idRol = (int)$rol['id_rol'];
+        // Consultar los nombres de los permisos asociados a este rol.
+        $stmtPermisos = $conexion->prepare(
+            'SELECT p.nombre_permisos FROM roles_permisos rp
+             INNER JOIN permisos p ON p.id_permisos = rp.id_permisos
+             WHERE rp.id_rol = :id_rol'
+        );
+        $stmtPermisos->execute(['id_rol' => $idRol]);
+        // Obtener solo los nombres de los permisos como un array simple.
+        $permisos = $stmtPermisos->fetchAll(PDO::FETCH_COLUMN, 0);
+
+        // Construir la estructura del rol con sus permisos.
+        $roles[] = [
+            'id_rol' => $idRol,
+            'nombre_rol' => $rol['nombre_rol'],
+            'permisos' => $permisos,
+        ];
+    }
+    return $roles; // Retornar la lista de roles con sus permisos.
+}
+
 function obtenerIdRolInterno(PDO $conexion, string $rolCliente): int
 {
     $rolCliente = trim($rolCliente);
@@ -322,6 +398,12 @@ try {
                 'id_empresa' => $idEmpresa,
             ]);
 
+            registrarAuditoriaDesdeSesion(
+                $conexion,
+                'Creó Departamento',
+                "Departamento: {$nombreDepto} en Empresa: {$empresaNombre}"
+            );
+
             responder(true, 'Departamento registrado en base de datos.');
             break;
 
@@ -376,6 +458,13 @@ try {
                 'id_dep' => $deptoUb['id_departamento'],
             ]);
 
+            registrarAuditoriaDesdeSesion(
+                $conexion,
+                'Creó Empleado',
+                "Empleado: {$nombres} {$apellidos} (Cédula: {$cedula}, Código: {$codigo})
+                en Departamento: {$nombreDepto} de Empresa: {$nombreEmpresa}"
+            );
+
             responder(true, 'Empleado registrado en base de datos.');
             break;
 
@@ -383,8 +472,11 @@ try {
             $usuario = post('usuario');
             $password = post('password');
             $rol = post('rol');
+            $rolId = postInt('id_rol');
+            $empresasAsignadas = postJsonArray('empresas_asignadas');
+            error_log('crear_usuario: empresas_asignadas=' . json_encode($empresasAsignadas, JSON_UNESCAPED_UNICODE));
 
-            if ($usuario === '' || $password === '' || $rol === '') {
+            if ($usuario === '' || $password === '' || ($rolId <= 0 && $rol === '')) {
                 responder(false, 'Usuario, contraseña y rol son obligatorios.');
             }
 
@@ -394,30 +486,54 @@ try {
                 responder(false, 'El nombre de usuario ya existe.');
             }
 
-            $idRol = obtenerIdRolInterno($conexion, $rol);
+            if ($rolId > 0) {
+                $validRol = $conexion->prepare('SELECT id_rol FROM roles WHERE id_rol = :id LIMIT 1');
+                $validRol->execute(['id' => $rolId]);
+                if (!$validRol->fetch()) {
+                    responder(false, 'Rol seleccionado no existe.');
+                }
+                $idRol = $rolId;
+            } else {
+                $idRol = obtenerIdRolInterno($conexion, $rol);
+            }
+
             $hash = password_hash($password, PASSWORD_DEFAULT);
 
             $insertar = $conexion->prepare(
-                'INSERT INTO usuarios (usuario, id_rol, contraseña, es_activo, ult_conexion)
-                 VALUES (:usuario, :id_rol, :contrasena, 1, NOW())'
+                'INSERT INTO usuarios (usuario, id_rol, contraseña, es_activo, ult_conexion, empresas_asignadas)
+                 VALUES (:usuario, :id_rol, :contrasena, 1, NOW(), :empresas_asignadas)'
             );
             $insertar->execute([
                 'usuario' => $usuario,
                 'id_rol' => $idRol,
                 'contrasena' => $hash,
+                'empresas_asignadas' => json_encode(array_values($empresasAsignadas), JSON_UNESCAPED_UNICODE),
             ]);
+
+            registrarAuditoriaDesdeSesion(
+                $conexion,
+                'Creó Usuario',
+                "Usuario: {$usuario} con Rol: {$rol}"
+            );
 
             responder(true, 'Usuario registrado en base de datos.');
             break;
 
         case 'listar_usuarios':
             $consulta = $conexion->query(
-                'SELECT u.id_usuario, u.usuario, u.id_rol, u.es_activo, r.nombre_rol
+                'SELECT u.id_usuario, u.usuario, u.id_rol, u.empresas_asignadas, u.es_activo, r.nombre_rol
                  FROM usuarios u
                  LEFT JOIN roles r ON r.id_rol = u.id_rol
                  ORDER BY u.usuario ASC'
             );
             $usuarios = $consulta->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($usuarios as &$usuario) {
+                $usuario['empresas_asignadas'] = json_decode((string)($usuario['empresas_asignadas'] ?? '[]'), true);
+                if (!is_array($usuario['empresas_asignadas'])) {
+                    $usuario['empresas_asignadas'] = [];
+                }
+            }
+            unset($usuario);
             responder(true, 'Usuarios cargados desde base de datos.', [
                 'usuarios' => $usuarios,
             ]);
@@ -428,17 +544,31 @@ try {
             $usuarioNuevo = post('usuario');
             $password = post('password');
             $rol = post('rol');
+            $rolId = postInt('id_rol');
             $estado = postInt('estado', 1) === 1 ? 1 : 0;
+            $empresasAsignadas = postJsonArray('empresas_asignadas');
+            error_log('actualizar_usuario: empresas_asignadas=' . json_encode($empresasAsignadas, JSON_UNESCAPED_UNICODE));
 
-            if ($usuarioOriginal === '' || $usuarioNuevo === '' || $rol === '') {
+            if ($usuarioOriginal === '' || $usuarioNuevo === '' || ($rolId <= 0 && $rol === '')) {
                 responder(false, 'Usuario original, usuario nuevo y rol son obligatorios.');
             }
 
-            $idRol = obtenerIdRolInterno($conexion, $rol);
+            if ($rolId > 0) {
+                $validRol = $conexion->prepare('SELECT id_rol FROM roles WHERE id_rol = :id LIMIT 1');
+                $validRol->execute(['id' => $rolId]);
+                if (!$validRol->fetch()) {
+                    responder(false, 'Rol seleccionado no existe.');
+                }
+                $idRol = $rolId;
+            } else {
+                $idRol = obtenerIdRolInterno($conexion, $rol);
+            }
+
             $params = [
                 'usuario_nuevo' => $usuarioNuevo,
                 'id_rol' => $idRol,
                 'es_activo' => $estado,
+                'empresas_asignadas' => json_encode(array_values($empresasAsignadas), JSON_UNESCAPED_UNICODE),
                 'usuario_original' => $usuarioOriginal,
             ];
 
@@ -449,7 +579,8 @@ try {
                      SET usuario = :usuario_nuevo,
                          id_rol = :id_rol,
                          es_activo = :es_activo,
-                         contraseña = :contrasena
+                         contraseña = :contrasena,
+                         empresas_asignadas = :empresas_asignadas
                      WHERE usuario = :usuario_original'
                 );
                 $params['contrasena'] = $hash;
@@ -458,7 +589,8 @@ try {
                     'UPDATE usuarios
                      SET usuario = :usuario_nuevo,
                          id_rol = :id_rol,
-                         es_activo = :es_activo
+                         es_activo = :es_activo,
+                         empresas_asignadas = :empresas_asignadas
                      WHERE usuario = :usuario_original'
                 );
             }
@@ -467,6 +599,18 @@ try {
             if ($actualizar->rowCount() === 0) {
                 responder(false, 'No se encontró el usuario en base de datos.');
             }
+
+            $descripcionAuditoria = "Usuario {$usuarioOriginal} actualizado a {$usuarioNuevo}";
+            if ($password !== '') {
+                $descripcionAuditoria .= " (contraseña cambiada)";
+            }
+            $descripcionAuditoria .= ", Rol: {$rol}, Estado: " . ($estado === 1 ? 'Activo' : 'Inactivo');
+
+            registrarAuditoriaDesdeSesion(
+                $conexion,
+                'Actualizó Usuario',
+                $descripcionAuditoria
+            );
 
             responder(true, 'Usuario actualizado en base de datos.');
             break;
@@ -482,6 +626,11 @@ try {
             if ($eliminar->rowCount() === 0) {
                 responder(false, 'No se encontró el usuario en base de datos.');
             }
+            registrarAuditoriaDesdeSesion(
+                $conexion,
+                'Eliminó Usuario',
+                "Usuario: {$usuario}"
+            );
             responder(true, 'Usuario eliminado en base de datos.');
             break;
 
@@ -507,7 +656,11 @@ try {
             if ($actualizar->rowCount() === 0) {
                 responder(false, 'No se encontró el usuario en base de datos.');
             }
-
+            registrarAuditoriaDesdeSesion(
+                $conexion,
+                'Cambió Estado Usuario',
+                "Usuario: {$usuario}, Nuevo estado: " . ($estado === 1 ? 'Activo' : 'Inactivo')
+            );
             responder(true, 'Estado de usuario actualizado en base de datos.');
             break;
 
@@ -532,6 +685,12 @@ try {
             if ($upd->rowCount() === 0) {
                 responder(false, 'No se encontró la empresa a actualizar.');
             }
+            registrarAuditoriaDesdeSesion(
+                $conexion,
+                'Actualizó Empresa',
+                "Empresa: {$nombreAnterior} a {$nombre} (RIF: {$rif})
+                , Causa: {$causa}"
+            );
             responder(true, 'Empresa actualizada en base de datos.');
             break;
 
@@ -585,6 +744,11 @@ try {
             ]);
 
             responder(true, 'Departamento actualizado.');
+            registrarAuditoriaDesdeSesion(
+                $conexion,
+                'Actualizó Departamento',
+                "Departamento: {$nomAnt} (Empresa: {$empAnt}) a {$nombreNuevo} (Empresa: {$empNueva}), Causa: {$causa}"
+            );
             break;
 
         case 'actualizar_empleado':
@@ -648,6 +812,12 @@ try {
                 responder(false, 'No se encontró el empleado a actualizar.');
             }
 
+            registrarAuditoriaDesdeSesion(
+                $conexion,
+                'Actualizó Empleado',
+                "Empleado: {$nombres} {$apellidos} (Cédula Original: {$cedulaOrig}, Nuevo Código: {$codigo})"
+            );
+
             responder(true, 'Empleado actualizado.');
             break;
 
@@ -709,14 +879,58 @@ try {
             $upNewSupervisor->execute(['cedula' => $cedulaSupervisor]);
 
             responder(true, 'Gerente asignado en base de datos.');
+            registrarAuditoriaDesdeSesion(
+                $conexion,
+                'Asignó Gerente Departamento',
+                "Departamento: {$deptoNombre} (Empresa: {$empNombre}), Supervisor: {$nombreSupervisor}"
+            );
             break;
 
         case 'obtener_datos_sistema':
             $datos = construirDatosSistemaDesdeRelacional($conexion);
+
+            $usuarioActivo = [
+                'usuario' => '',
+                'rol' => '',
+                'empresas_asignadas' => [],
+            ];
+
+            $sessionUsuario = trim((string)($_SESSION['usuario'] ?? ''));
+            $sessionRol = trim((string)($_SESSION['rol'] ?? ''));
+            if ($sessionUsuario !== '') {
+                $stmt = $conexion->prepare(
+                    'SELECT u.usuario, COALESCE(r.nombre_rol, \'\') AS nombre_rol, COALESCE(u.empresas_asignadas, \'[]\') AS empresas_asignadas
+                     FROM usuarios u
+                     LEFT JOIN roles r ON r.id_rol = u.id_rol
+                     WHERE u.usuario = :usuario
+                     LIMIT 1'
+                );
+                $stmt->execute(['usuario' => $sessionUsuario]);
+                $fila = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($fila) {
+                    $empresasAsignadas = json_decode((string)$fila['empresas_asignadas'], true);
+                    if (!is_array($empresasAsignadas)) {
+                        $empresasAsignadas = [];
+                    }
+                    $usuarioActivo = [
+                        'usuario' => (string)$fila['usuario'],
+                        'rol' => strtolower(trim((string)$fila['nombre_rol'])),
+                        'empresas_asignadas' => array_values(array_map('strval', $empresasAsignadas)),
+                    ];
+                } else {
+                    $usuarioActivo = [
+                        'usuario' => $sessionUsuario,
+                        'rol' => strtolower($sessionRol),
+                        'empresas_asignadas' => [],
+                    ];
+                }
+            }
+
             // Log para depuración: verificar qué datos se están devolviendo
             error_log('Datos del sistema devueltos: ' . json_encode($datos));
             responder(true, 'Datos cargados desde tablas relacionales.', [
                 'datos' => $datos,
+                'usuario_activo' => $usuarioActivo,
             ]);
             break;
 
@@ -817,6 +1031,12 @@ try {
                 $conexion->commit();
                 error_log("guardar_datos_sistema: Transacción confirmada (commit)");
 
+                registrarAuditoriaDesdeSesion(
+                    $conexion,
+                    'Guardó Datos del Sistema',
+                    'Se actualizaron múltiples configuraciones del sistema (horarios, calendarios, etc.)'
+                );
+
                 // Responder con éxito
                 responder(true, 'Preferencias guardadas en base de datos.');
             } catch (Throwable $e) {
@@ -891,7 +1111,7 @@ try {
             require_once __DIR__ . '/../Incidencias/IncidenciaServicio.php';
             $servicio = new IncidenciaServicio($conexion);
 
-            $fechaInicio = post('fecha_inicio');
+            $fechaInicio = post('fech-inicio');
             $fechaFin = post('fecha_fin');
 
             if ($fechaInicio === '' || $fechaFin === '') {
@@ -928,6 +1148,11 @@ try {
                 $conexion->prepare('UPDATE roles SET nombre_rol = :n WHERE id_rol = :id')
                     ->execute(['n' => $nombreRol, 'id' => $idRol]);
                 guardarRolesPermisosParaRol($conexion, $idRol, $permisosArr);
+                registrarAuditoriaDesdeSesion(
+                    $conexion,
+                    'Actualizó Rol',
+                    "Rol ID: {$idRol}, Nuevo nombre: {$nombreRol}, Permisos: " . implode(', ', $permisosArr)
+                );
                 responder(true, 'Rol actualizado.', ['id_rol' => $idRol]);
             } else {
                 $dup = $conexion->prepare('SELECT id_rol FROM roles WHERE LOWER(nombre_rol) = LOWER(:n) LIMIT 1');
@@ -938,6 +1163,11 @@ try {
                 $conexion->prepare('INSERT INTO roles (nombre_rol) VALUES (:n)')->execute(['n' => $nombreRol]);
                 $nuevoId = (int)$conexion->lastInsertId();
                 guardarRolesPermisosParaRol($conexion, $nuevoId, $permisosArr);
+                registrarAuditoriaDesdeSesion(
+                    $conexion,
+                    'Creó Rol',
+                    "Rol ID: {$nuevoId}, Nombre: {$nombreRol}, Permisos: " . implode(', ', $permisosArr)
+                );
                 responder(true, 'Rol creado.', ['id_rol' => $nuevoId]);
             }
             break;
@@ -955,6 +1185,12 @@ try {
             }
 
             $conexion->prepare('DELETE FROM roles WHERE id_rol = :id')->execute(['id' => $idRol]);
+
+            registrarAuditoriaDesdeSesion(
+                $conexion,
+                'Eliminó Rol',
+                "Rol ID: {$idRol}"
+            );
 
             responder(true, 'Rol eliminado.');
             break;

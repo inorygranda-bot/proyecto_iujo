@@ -1,103 +1,87 @@
-/* auditorias: layout general */
-#Auditoria {
+#SeccionGestiones, #Auditoria {
     width: 100%;
-    max-width: 1050px;
-    margin: 20px auto;
-    padding: 0;
+    max-width: 1150px;
+    margin: 0 auto;
+    padding: 0 10px 40px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
 }
 
-/* cabecera con acciones */
-.CabeceraAuditoria {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 14px;
-    padding: 14px 20px;
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-    border-radius: 12px;
+/*Estas son las tarjetas*/
+.TarjetaGestion, .TablaAuditoria, .CabeceraAuditoria {
+    background: #ffffff;
+    border-radius: 16px;
     border: 1px solid #e2e8f0;
-    border-left: 4px solid #2c5f8d;
-    box-shadow: 0 4px 12px rgba(44, 95, 141, 0.06);
+    border-left: 5px solid #2c5f8d;
+    box-shadow: 0 8px 24px rgba(44, 95, 141, 0.08);
+    padding: 35px;
+    margin-bottom: 25px;
+    position: relative;
 }
 
-.CabeceraAuditoria__titulo {
-    margin: 0 0 4px;
-    font-size: 1.15rem;
+/* La tipografia que se ha usado */
+.Titulo, .CabeceraAuditoria__titulo {
+    font-size: 1.25rem;
     font-weight: 800;
-    color: #2c5f8d;
-    letter-spacing: 0.4px;
+    color: #0f172a;
     text-transform: uppercase;
+    margin: 0 0 12px 0;
 }
 
-.CabeceraAuditoria__sub {
-    margin: 0;
-    font-size: 0.85rem;
+.Subtitulo, .CabeceraAuditoria__sub {
     color: #64748b;
-    max-width: 420px;
-    line-height: 1.4;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0 0 15px 0;
 }
 
-/* Tabla de auditoria */
-.TablaAuditoria {
-    background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    overflow-x: auto; /* Para tablas grandes en móviles */
-}
-
-#TablaAuditoria__contenido {
+/* Las tablaaas */
+table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9rem;
-    color: #333;
+    font-size: 0.95rem;
+    color: #334155;
 }
 
-#TablaAuditoria__contenido thead {
-    background-color: #eef2f6;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-#TablaAuditoria__contenido th {
-    padding: 12px 15px;
-    text-align: left;
-    font-weight: 700;
-    color: #2c5f8d;
+th {
+    background: #f8fafc;
+    color: #475569;
+    padding: 14px 16px;
+    font-size: 0.75rem;
     text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 0.5px;
+    font-weight: 700;
+    border-bottom: 2px solid #e2e8f0;
 }
 
-#TablaAuditoria__contenido tbody tr {
+td {
+    padding: 14px 16px;
     border-bottom: 1px solid #f1f5f9;
 }
 
-#TablaAuditoria__contenido tbody tr:last-child {
-    border-bottom: none;
+tr:hover td { background: #f1f5f9; }
+
+/* Botones y formularios */
+.BtnCrear, .BtnPrimario {
+    background: #2c5f8d;
+    color: #ffffff;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
 }
 
-#TablaAuditoria__contenido tbody tr:hover {
-    background-color: #f6faff;
+.InputBuscador {
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+    font-size: 1rem;
+    width: 250px;
 }
 
-#TablaAuditoria__contenido td {
-    padding: 10px 15px;
-    vertical-align: middle;
-}
-
-.TablaAuditoria__vacio {
-    text-align: center;
-    padding: 20px;
-    color: #666;
-    font-style: italic;
-}
-
-@media (max-width: 768px) {
-    #TablaAuditoria__contenido th,
-    #TablaAuditoria__contenido td {
-        padding: 8px 10px;
+@media (max-width: 650px) {
+    .TarjetaGestion, .TablaAuditoria, .CabeceraAuditoria {
+        padding: 25px;
     }
 }

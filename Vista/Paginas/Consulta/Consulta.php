@@ -52,9 +52,9 @@
                 </nav>
 
                 <nav class="BotonesAccion">
-                    <!-- Solo visible al entrar en empresa o departamento: vuelve un paso dentro de Consulta (no es el historial del navegador). -->
-                    <a href="#" id="EnlaceVolverConsulta" class="EnlaceVolverConsulta" hidden onclick="volverConsultaInterno(event)">← Volver</a>
-                   <button type="button" class="BotonVolverConsulta" onclick="VolverInicio()"><i class="fas fa-arrow-left"></i> Volver al menú</button>
+        
+                    <a href="#" id="EnlaceVolverConsulta" class="EnlaceVolverConsulta" hidden onclick="volverConsultaInterno(event)">Volver</a>
+                   <button type="button" class="BotonVolverConsulta" onclick="VolverInicio()"><i class="fas fa-arrow-left"></i>Volver al menú</button>
                 </nav>
             </header>
 

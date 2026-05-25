@@ -1,4 +1,3 @@
-
 /* Contenedor Principal */
 #Calendario.Principal {
     width: 100%;
@@ -34,7 +33,7 @@
 
 .grupo-textos p { margin: 4px 0 0; color: #64748b; font-size: 0.9rem; }
 
-/* Botones Genéricos del Sistema */
+/* Botones del Sistema */
 .boton-volver {
     background: #f1f5f9;
     color: #475569;
@@ -118,7 +117,7 @@
 }
 .ctx-aplicar:hover { background: #1e4976; transform: translateY(-1px); }
 
-/* --- TARJETA HORARIO (Organizado por Bloques) --- */
+/* Tarjeta de Horario */
 .fila-horario {
     display: block;
     margin-top: auto;
@@ -139,7 +138,7 @@
 }
 .fila-horario input[type="time"]:focus { outline: none; border-color: #2c5f8d; background: #fff; box-shadow: 0 0 0 3px rgba(44,95,141,0.1); }
 
-/* Botón Actualizar Horario */
+/* Botón actualizar horario */
 .fila-horario button.flecha {
     display: block; width: 100%;
     padding: 14px; margin-top: 25px; border-radius: 8px;
@@ -308,12 +307,29 @@
 .marca.feriado { background: #fee2e2; border: 1px solid #ef4444; }
 
 
-#editor {
-    padding: 0; border: none; border-radius: 14px;
-    max-width: 500px; width: 95%; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+/* Seleccionamos el elemento cuando está abierto como modal */
+dialog#editor:modal {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+    max-width: 500px !important;
+    width: 95% !important;
 }
-#editor::backdrop { background: rgba(30,41,59,0.5); backdrop-filter: blur(4px); }
 
+/* Limpieza de cualquier otro estilo que pueda estar afectando */
+#editor {
+    padding: 0;
+    border: none;
+    border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+}
+
+#editor::backdrop { 
+    background: rgba(30,41,59,0.5); 
+    backdrop-filter: blur(4px); 
+}
 .ventana { display: flex; flex-direction: column; }
 
 .cabecera {
@@ -346,7 +362,7 @@
 .rojo { background: #ef4444; color: #fff; }
 .rojo:hover { background: #dc2626; }
 
-/* Responsive */
+
 @media (max-width: 900px) {
     .FilaDoble { grid-template-columns: 1fr; gap: 30px; }
     .bloque-contexto-calendario, .bloque-horario { min-height: auto; padding: 25px; }

@@ -43,7 +43,22 @@ async function cargarUsuariosBD() {
     });
     const resultado = await respuesta.json();
     if (resultado?.ok && Array.isArray(resultado?.data?.usuarios)) {
-        usuariosBdCache = resultado.data.usuarios;
+        usuariosBdCache = resultado.data.usuarios.map((u) => {
+            const empresas = u.empresas_asignadas;
+            if (Array.isArray(empresas)) {
+                u.empresas_asignadas = empresas.map(String);
+            } else if (typeof empresas === 'string' && empresas.trim() !== '') {
+                try {
+                    const parsed = JSON.parse(empresas);
+                    u.empresas_asignadas = Array.isArray(parsed) ? parsed.map(String) : [];
+                } catch (e) {
+                    u.empresas_asignadas = [];
+                }
+            } else {
+                u.empresas_asignadas = [];
+            }
+            return u;
+        });
     }
     return usuariosBdCache;
 }
@@ -94,7 +109,7 @@ window.abrirModalUsuario = async function(login = null) {
     try {
         const datos = await cargarDatosGestionBD();
         const usuarios = await cargarUsuariosBD();
-        const empresas = datos.empresas || [];
+        const empresas = Array.isArray(datos.empresas) ? datos.empresas : (Array.isArray(window.datosSistema?.empresas) ? window.datosSistema.empresas : []);
         const roles = await cargarRolesBD();
         const user = login ? usuarios.find(u => u.usuario === login) : null;
 
@@ -112,18 +127,40 @@ window.abrirModalUsuario = async function(login = null) {
         const uRol = document.getElementById("U_Rol");
         if (uRol) {
             uRol.innerHTML = '<option value="">Selecciona un rol...</option>' + 
-                roles.map(r => `<option value="${r.nombre}" ${user?.nombre_rol === r.nombre ? "selected" : ""}>${r.nombre}</option>`).join("");
+                roles.map(r => `<option value="${r.id}" ${String(user?.id_rol) === String(r.id) ? "selected" : ""}>${r.nombre}</option>`).join("");
         }
 
         const gridEmp = document.getElementById("GridEmpresasUsuario");
         if (gridEmp) {
-            const asignadas = user?.empresas_asignadas || [];
-            gridEmp.innerHTML = empresas.length ? empresas.map(e => `
-                <label class="CheckItem">
-                    <input type="checkbox" value="${e.rif}" ${asignadas.includes(e.rif) ? "checked" : ""}>
-                    <span>${e.nombre} (${e.rif})</span>
-                </label>
-            `).join("") : '<p class="TextoGris">No hay empresas registradas aún.</p>';
+            const asignadasRaw = user?.empresas_asignadas;
+            let asignadas = [];
+
+            if (Array.isArray(asignadasRaw)) {
+                asignadas = asignadasRaw.map(String);
+            } else if (typeof asignadasRaw === 'string' && asignadasRaw.trim() !== '') {
+                try {
+                    const parsed = JSON.parse(asignadasRaw);
+                    asignadas = Array.isArray(parsed) ? parsed.map(String) : [];
+                } catch (e) {
+                    asignadas = [];
+                }
+            }
+
+            const asignadasSet = new Set(asignadas.map((rif) => String(rif || '').trim().toUpperCase()));
+            const empresasList = Array.isArray(empresas) ? empresas : [];
+
+            console.debug('abrirModalUsuario: empresas cargadas', empresasList.length, 'asignadas', asignadasSet.size);
+
+            gridEmp.innerHTML = empresasList.length ? empresasList.map(e => {
+                const rif = String(e.rif || '').trim();
+                const checked = rif && asignadasSet.has(rif.toUpperCase()) ? 'checked' : '';
+                return `
+                    <label class="CheckItem">
+                        <input type="checkbox" name="empresas_asignadas[]" value="${rif}" ${checked}>
+                        <span>${e.nombre || 'Empresa sin nombre'} (${rif})</span>
+                    </label>
+                `;
+            }).join("") : '<p class="TextoGris">No hay empresas registradas aún.</p>';
         }
 
         overlay.style.display = "flex"; 
@@ -224,47 +261,45 @@ window.guardarUsuario = async function(e) {
     const clave = document.getElementById("U_Clave").value;
     const rol = document.getElementById("U_Rol").value;
     const estado = document.getElementById("U_Estado").value;
+    const rolSelect = document.getElementById("U_Rol");
+    const rolNombre = rolSelect?.options[rolSelect.selectedIndex]?.text || '';
 
     if (usuarios.find(u => u.usuario.toLowerCase() === login.toLowerCase() && u.usuario !== editar)) {
         return alert("El nombre de usuario ya está en uso.");
     }
 
+    const empresasAsignadas = Array.from(document.querySelectorAll("#GridEmpresasUsuario input[type=checkbox]:checked"))
+        .map((cb) => String(cb.value || '').trim())
+        .filter(Boolean);
+
+    const payload = {
+        accion: editar ? "actualizar_usuario" : "crear_usuario",
+        usuario: login,
+        password: clave,
+        id_rol: rol,
+        rol: rolNombre,
+        estado,
+        empresas_asignadas: JSON.stringify(empresasAsignadas),
+    };
+
     if (editar) {
-        const respuesta = await fetch("Controlador/API/gestion_api.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
-            body: new URLSearchParams({
-                accion: "actualizar_usuario",
-                usuario_original: editar,
-                usuario: login,
-                password: clave,
-                rol,
-                estado,
-            }),
-        });
-        const resultado = await respuesta.json();
-        if (!resultado?.ok) {
-            return alert(resultado?.mensaje || "No se pudo actualizar usuario en base de datos.");
-        }
-        window.registrarAuditoria("Editó Usuario", `Usuario: ${login}`);
+        payload.usuario_original = editar;
     } else {
         if (!clave) return alert("La contraseña es obligatoria para nuevos usuarios.");
-        const respuesta = await fetch("Controlador/API/gestion_api.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
-            body: new URLSearchParams({
-                accion: "crear_usuario",
-                usuario: login,
-                password: clave,
-                rol,
-            }),
-        });
-        const resultado = await respuesta.json();
-        if (!resultado?.ok) {
-            return alert(resultado?.mensaje || "No se pudo crear usuario en base de datos.");
-        }
-        window.registrarAuditoria("Creó Usuario", `Usuario: ${login}`);
     }
+
+    console.debug("Guardar usuario payload:", payload);
+    const respuesta = await fetch("Controlador/API/gestion_api.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+        body: new URLSearchParams(payload),
+    });
+    const resultado = await respuesta.json();
+    if (!resultado?.ok) {
+        return alert(resultado?.mensaje || "No se pudo guardar el usuario en base de datos.");
+    }
+
+    window.registrarAuditoria(editar ? "Editó Usuario" : "Creó Usuario", `Usuario: ${login}`);
     window.cerrarModales();
     await renderizarUsuarios();
 };

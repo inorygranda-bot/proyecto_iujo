@@ -1,18 +1,21 @@
 <section id="SeccionGestiones" class="Principal">
-    <header class="EncabezadoGestion">
-        <section>
-            <h2 class="Titulo">Usuarios y Accesos</h2>
-            <p class="Subtitulo">Administra las cuentas de usuario y define permisos por rol.</p>
-        </section>
-        <nav class="BotonesHeader">
-            <button type="button" class="BtnCrear" onclick="window.abrirListaRoles()">
-                <i class="fas fa-shield-alt"></i> Gestionar Roles
-            </button>
-            <button type="button" class="BtnCrear" onclick="window.abrirModalUsuario()">
-                <i class="fas fa-user-plus"></i> Nuevo Usuario
-            </button>
-        </nav>
-    </header>
+    
+    <article class="TarjetaGestion">
+        <header class="EncabezadoGestion" style="margin-bottom: 0;">
+            <section>
+                <h2 class="Titulo">Usuarios y Accesos</h2>
+                <p class="Subtitulo">Administra las cuentas de usuario y define permisos por rol.</p>
+            </section>
+            <nav class="BotonesHeader">
+                <button type="button" class="BtnCrear" onclick="window.abrirListaRoles()">
+                    <i class="fas fa-shield-alt"></i> Gestionar Roles
+                </button>
+                <button type="button" class="BtnCrear" onclick="window.abrirModalUsuario()">
+                    <i class="fas fa-user-plus"></i> Nuevo Usuario
+                </button>
+            </nav>
+        </header>
+    </article>
 
     <article class="TarjetaGestion">
         <header class="TarjetaCabecera">

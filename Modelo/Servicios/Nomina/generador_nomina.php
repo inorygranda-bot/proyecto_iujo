@@ -1,7 +1,12 @@
 <?php
 declare(strict_types=1);
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once __DIR__ . '/../../Infraestructura/conexionBD.php';
+require_once __DIR__ . '/GeneradorPdfNomina.php'; // Incluimos la nueva clase para generar PDF
 
 $formato = $_GET['formato'] ?? 'txt';
 
@@ -14,67 +19,12 @@ try {
     $empleados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if ($formato === 'pdf') {
-        
+        $generadorPdf = new GeneradorPdfNomina();
+        $pdfContent = $generadorPdf->generar($empleados);
+
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="nomina.pdf"');
-        echo "%PDF-1.4\n";
-        echo "1 0 obj\n";
-        echo "<<\n";
-        echo "/Type /Catalog\n";
-        echo "/Pages 2 0 R\n";
-        echo ">>\n";
-        echo "endobj\n";
-        echo "2 0 obj\n";
-        echo "<<\n";
-        echo "/Type /Pages\n";
-        echo "/Kids [3 0 R]\n";
-        echo "/Count 1\n";
-        echo ">>\n";
-        echo "endobj\n";
-        echo "3 0 obj\n";
-        echo "<<\n";
-        echo "/Type /Page\n";
-        echo "/Parent 2 0 R\n";
-        echo "/MediaBox [0 0 612 792]\n";
-        echo "/Contents 4 0 R\n";
-        echo "/Resources << /Font << /F1 5 0 R >> >>\n";
-        echo ">>\n";
-        echo "endobj\n";
-        echo "4 0 obj\n";
-        echo "<<\n";
-        echo "/Length 200\n";
-        echo ">>\n";
-        echo "stream\n";
-        echo "BT\n";
-        echo "/F1 12 Tf\n";
-        echo "50 750 Td\n";
-        echo "(Nomina de Empleados) Tj\n";
-        echo "ET\n";
-        echo "endstream\n";
-        echo "endobj\n";
-        echo "5 0 obj\n";
-        echo "<<\n";
-        echo "/Type /Font\n";
-        echo "/Subtype /Type1\n";
-        echo "/BaseFont /Helvetica\n";
-        echo ">>\n";
-        echo "endobj\n";
-        echo "xref\n";
-        echo "0 6\n";
-        echo "0000000000 65535 f \n";
-        echo "0000000009 00000 n \n";
-        echo "0000000058 00000 n \n";
-        echo "0000000115 00000 n \n";
-        echo "0000000274 00000 n \n";
-        echo "0000000410 00000 n \n";
-        echo "trailer\n";
-        echo "<<\n";
-        echo "/Size 6\n";
-        echo "/Root 1 0 R\n";
-        echo ">>\n";
-        echo "startxref\n";
-        echo "456\n";
-        echo "%%EOF\n";
+        echo $pdfContent;
     } elseif ($formato === 'excel') {
         // Generar CSV simple como Excel
         header('Content-Type: text/csv; charset=utf-8');

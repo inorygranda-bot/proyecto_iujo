@@ -8,6 +8,11 @@ const DEFAULT_DATOS = {
     departamentos: [],
     empleados: [],
     usuarios: [],
+    usuario_activo: {
+        usuario: '',
+        rol: '',
+        empresas_asignadas: [],
+    },
     calendarios: {
         general: {},
         empresas: {},
@@ -49,6 +54,12 @@ async function recargarDatosDesdeBD() {
         const resultado = await respuesta.json();
         if (resultado?.ok && resultado?.data?.datos) {
             window.datosSistema = resultado.data.datos;
+            if (resultado.data.usuario_activo && typeof resultado.data.usuario_activo === 'object') {
+                window.datosSistema.usuario_activo = resultado.data.usuario_activo;
+            } else {
+                window.datosSistema.usuario_activo = JSON.parse(JSON.stringify(DEFAULT_DATOS.usuario_activo));
+            }
+            console.debug("Consulta: usuario_activo", window.datosSistema.usuario_activo);
         } else {
             window.datosSistema = JSON.parse(JSON.stringify(DEFAULT_DATOS));
         }
@@ -94,6 +105,74 @@ function normalizarDatos() {
     ['empresas', 'departamentos', 'empleados'].forEach(cat => {
         if (!d.calendarios.horarios[cat]) d.calendarios.horarios[cat] = {};
     });
+
+    if (!d.usuario_activo || typeof d.usuario_activo !== 'object') {
+        d.usuario_activo = {
+            usuario: '',
+            rol: '',
+            empresas_asignadas: [],
+        };
+    }
+
+    if (!Array.isArray(d.usuario_activo.empresas_asignadas)) {
+        d.usuario_activo.empresas_asignadas = [];
+    }
+
+    if (typeof d.usuario_activo.usuario !== 'string') {
+        d.usuario_activo.usuario = '';
+    }
+
+    if (typeof d.usuario_activo.rol !== 'string') {
+        d.usuario_activo.rol = '';
+    }
+
+    filtrarDatosPorEmpresasAsignadas(d);
+}
+
+function esRolAdministrador(rol) {
+    const valor = String(rol || '').trim().toLowerCase();
+    return /(^|[^a-z0-9])(admin|administrador|superadmin|root)([^a-z0-9]|$)/i.test(valor);
+}
+
+function esUsuarioAdministrador(usuario) {
+    const valor = String(usuario || '').trim().toLowerCase();
+    return /(^|[^a-z0-9])(admin|administrador|superadmin|root)([0-9]*|[^a-z0-9]|$)/i.test(valor);
+}
+
+function normalizarRif(rif) {
+    if (rif === null || rif === undefined) {
+        return '';
+    }
+    const valor = String(rif || '').trim().toUpperCase();
+    return valor.replace(/[^A-Z0-9]/g, '');
+}
+
+function filtrarDatosPorEmpresasAsignadas(datos) {
+    const rolActivo = String(datos.usuario_activo.rol || '').trim().toLowerCase();
+    const usuarioActivo = String(datos.usuario_activo.usuario || '').trim().toLowerCase();
+    const esAdminUsuario = esUsuarioAdministrador(usuarioActivo);
+
+    if (esRolAdministrador(rolActivo) || esAdminUsuario) {
+        console.debug('Consulta: usuario admin detectado, no filtrar empresas', { rolActivo, usuarioActivo });
+        return;
+    }
+
+    const asignadas = (datos.usuario_activo.empresas_asignadas || [])
+        .map(normalizarRif)
+        .filter(Boolean);
+    if (!asignadas.length) {
+        datos.empresas = [];
+        datos.departamentos = [];
+        datos.empleados = [];
+        return;
+    }
+
+    const asignadasSet = new Set(asignadas);
+    console.debug('Consulta: empresas asignadas del usuario', asignadas);
+    datos.empresas = (datos.empresas || []).filter((e) => asignadasSet.has(normalizarRif(e.rif)));
+    const nombresPermitidos = datos.empresas.map((e) => String(e.nombre || '').trim().toLowerCase());
+    datos.departamentos = (datos.departamentos || []).filter((d) => nombresPermitidos.includes(String(d.empresa || '').trim().toLowerCase()));
+    datos.empleados = (datos.empleados || []).filter((e) => nombresPermitidos.includes(String(e.empresa || '').trim().toLowerCase()));
 }
 
 async function sincronizarDatosConsulta() {
@@ -256,7 +335,7 @@ function renderizarListaEmpresas() {
         const btnCal = document.createElement("button");
         btnCal.type = "button";
         btnCal.className = "BotonEmpresaLista";
-        btnCal.textContent = "📅";
+        btnCal.textContent = "☷";
         btnCal.style.width = "44px";
         btnCal.title = "Ver calendario";
         btnCal.addEventListener("click", (e) => {
@@ -317,17 +396,18 @@ function seleccionarEmpresa(emp) {
                     String(e.depto || "").toLowerCase() === String(d.nombre || "").toLowerCase()
                 ).length;
                 
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td><strong>${esc(d.nombre)}</strong></td>
-                    <td>${nEmp}</td>
-                    <td>
-                        <button class="BotonAccion" onclick="verDetalleDepto('${esc(empresaSeleccionadaRuta)}','${esc(d.nombre)}')">Ver personal</button>
-                        <button class="BotonAccion" onclick="abrirEditarDepartamento('${esc(empresaSeleccionadaRuta)}','${esc(d.nombre)}')">Editar</button>
-                        <button class="BotonAccion" style="background:#b71c1c" onclick="verCalendarioDepartamento('${esc(d.nombre)}','${esc(empresaSeleccionadaRuta)}')">📅</button>
-                    </td>
-                `;
-                body.appendChild(row);
+               // Busca esta parte en tu código y cámbiala por esto:
+const row = document.createElement("tr");
+row.innerHTML = `
+    <td><strong>${esc(d.nombre)}</strong></td>
+    <td>${nEmp}</td>
+    <td style="white-space: nowrap;">
+        <button type="button" class="BotonAccion btn-con-tooltip" data-tooltip="VER PERSONAL" onclick="verDetalleDepto('${esc(empresaSeleccionadaRuta)}','${esc(d.nombre)}')">👤</button>
+        <button type="button" class="BotonAccion btn-con-tooltip" data-tooltip="EDITAR" onclick="abrirEditarDepartamento('${esc(empresaSeleccionadaRuta)}','${esc(d.nombre)}')">✎</button>
+        <button type="button" class="BotonAccion btn-con-tooltip" data-tooltip="CALENDARIO" style="background:#b71c1c; color:white;" onclick="verCalendarioDepartamento('${esc(d.nombre)}','${esc(empresaSeleccionadaRuta)}')">☷</button>
+    </td>
+`;
+body.appendChild(row);
             });
         }
     }
@@ -372,19 +452,20 @@ function verDetalleDepto(nombreEmp, nombreDepto) {
             body.innerHTML = '<tr><td colspan="6" class="TablaDatos__vacio">No hay empleados.</td></tr>';
         } else {
             empleados.forEach((emp) => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td>${esc(emp.codigo)}</td>
-                    <td>${esc(emp.nombres)} ${esc(emp.apellidos)}</td>
-                    <td><small>${esc(emp.cedula)}</small><br><small>${esc(emp.rif)}</small></td>
-                    <td>${esc(emp.cargo)}</td>
-                    <td>${esc(emp.jefe || "Sin asignar")}</td>
-                    <td>
-                        <button class="BotonAccion" onclick="abrirEditarEmpleado('${esc(emp.cedula)}')">Editar</button>
-                        <button class="BotonAccion" style="background:#b71c1c" onclick="verCalendarioDeEmpleado('${esc(emp.cedula)}','${esc(emp.nombres)}','${esc(emp.depto)}','${esc(emp.empresa)}')">📅</button>
-                    </td>
-                `;
-                body.appendChild(row);
+               // Busca esta parte en tu código y cámbiala por esto:
+const row = document.createElement("tr");
+row.innerHTML = `
+    <td>${esc(emp.codigo)}</td>
+    <td>${esc(emp.nombres)} ${esc(emp.apellidos)}</td>
+    <td><small>${esc(emp.cedula)}</small><br><small>${esc(emp.rif)}</small></td>
+    <td>${esc(emp.cargo)}</td>
+    <td>${esc(emp.jefe || "Sin asignar")}</td>
+    <td style="white-space: nowrap;">
+        <button type="button" class="BotonAccion btn-con-tooltip" data-tooltip="EDITAR" onclick="abrirEditarEmpleado('${esc(emp.cedula)}')">✎</button>
+        <button type="button" class="BotonAccion btn-con-tooltip" data-tooltip="CALENDARIO" style="background:#b71c1c; color:white;" onclick="verCalendarioDeEmpleado('${esc(emp.cedula)}','${esc(emp.nombres)}','${esc(emp.depto)}','${esc(emp.empresa)}')">📅</button>
+    </td>
+`;
+body.appendChild(row);
             });
         }
     }
@@ -1039,5 +1120,5 @@ async function initConsulta() {
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initConsulta);
 } else {
-    setTimeout(initConsulta, 0);
+    initConsulta();
 }
