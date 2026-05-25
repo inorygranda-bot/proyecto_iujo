@@ -106,8 +106,9 @@ async function importarTXT() {
 }
 
 function mostrarResultadoImportacion(resultado) {
-    const contenedor = document.getElementById('resultado-importacion');
-    const contenido = document.getElementById('resultado-importacion-contenido');
+        console.log('Respuesta de la API (importarTXT):', resultado);
+        const contenedor = document.getElementById('resultado-importacion');
+        const contenido = document.getElementById('resultado-importacion-contenido');
 
     var html = '';
     html += '<p><strong>Total registros leídos:</strong> ' + resultado.data.total_registros + '</p>';
@@ -205,6 +206,7 @@ async function cargarAsistencias() {
         });
 
         var resultado = await respuesta.json();
+        console.log('Respuesta de la API (cargarAsistencias):', resultado);
         if (resultado.ok && resultado.data.asistencias) {
             datosSistemaIncidencias.asistencias = resultado.data.asistencias;
             renderizarTablaAsistencias();
@@ -278,6 +280,7 @@ async function cargarInasistencias() {
         });
 
         var resultado = await respuesta.json();
+        console.log('Respuesta de la API (cargarInasistencias):', resultado);
         if (resultado.ok && resultado.data.inasistencias) {
             datosSistemaIncidencias.inasistencias = resultado.data.inasistencias;
             renderizarTablaInasistencias();

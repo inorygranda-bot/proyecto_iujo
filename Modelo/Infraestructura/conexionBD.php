@@ -82,7 +82,7 @@ function obtenerConexionPdo(): PDO
             DB_USER,
             DB_PASS,
             [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_SILENT,        // Configurar PDO para no lanzar excepciones y permitir el manejo manual de errores.
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,     // Configurar PDO para lanzar excepciones en caso de errores.
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,   // Establecer el modo de fetch predeterminado a array asociativo.
                 PDO::ATTR_EMULATE_PREPARES => false,                // Deshabilitar la emulación de prepared statements para mayor seguridad y rendimiento.
                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'", // Asegurar la codificación correcta.

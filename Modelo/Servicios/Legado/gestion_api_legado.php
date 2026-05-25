@@ -1092,7 +1092,9 @@ try {
                     @unlink($rutaTemporal);
                 }
                 
-                responder(true, 'Importación completada con éxito.', $resultado);
+                $ok = empty($resultado['errores']);
+                $mensaje = $ok ? 'Importación completada con éxito.' : 'Importación completada con errores.';
+                responder($ok, $mensaje, $resultado);
 
             } catch (Throwable $e) {
                 $conexion->rollBack();

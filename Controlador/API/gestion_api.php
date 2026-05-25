@@ -269,6 +269,8 @@ switch ($accion) {
         header('Content-Type: application/json'); // La respuesta será JSON.
         // Obtener las fechas de inicio y fin.
         $fechaInicio = $_POST['fech-inicio'] ?? '';
+        $fechaFin = $_POST['fecha_fin'] ?? '';        
+        $fechaInicio = $_POST['fecha_inicio'] ?? '';
         $fechaFin = $_POST['fecha_fin'] ?? '';
 
         // Validar que las fechas no estén vacías.
@@ -293,7 +295,9 @@ switch ($accion) {
     case 'detectar_inasistencias':
         header('Content-Type: application/json'); // La respuesta será JSON.
         // Obtener las fechas de inicio y fin.
-        $fechaInicio = $_POST['fech-inicio'] ?? '';
+        $fechaInicio = $_POST['fecha_inicio'] ?? '';
+        $fechaFin = $_POST['fecha_fin'] ?? '';        
+        $fechaInicio = $_POST['fecha_inicio'] ?? '';
         $fechaFin = $_POST['fecha_fin'] ?? '';
 
         // Validar que las fechas no estén vacías.
