@@ -68,7 +68,8 @@ body {
     list-style: none;
     padding: 30px 0;
     flex: 1;
-    overflow-y: auto;
+    /* Por esto: */
+    overflow-y: hidden; 
 }
 
 .SidebarMenu li a {
@@ -100,22 +101,25 @@ body {
     border-left-color: var(--white);
     font-weight: 600;
 }
-
-.SidebarFooter {
-    padding: 20px 30px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-}
-
 .SidebarFooter a {
     display: flex;
     align-items: center;
-    color: #ef4444;
+    color: var(--white); 
     text-decoration: none;
-    font-weight: 600;
+    font-weight: 601;
+    padding: 10px; /* Un poco de espacio para el área de clic */
+    border-radius: 8px; /* Bordes redondeados */
+    transition: background-color 0.3s, color 0.3s; /* Animación suave */
 }
 
-.SidebarFooter a i { margin-right: 10px; }
+.SidebarFooter a:hover {
+    color: #f24444; 
+    background-color: var(--white); /* Opcional: fondo blanco al pasar el mouse */
+}
 
+.SidebarFooter a i { 
+    margin-right: 10px; 
+}
 .MainContent {
     margin-left: 280px;
     width: calc(100% - 280px);
@@ -194,4 +198,32 @@ body {
     line-height: 1.6;
 }
 
+/* Estilo del botón hamburguesa */
+.BtnMenu {
+    display: block; 
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--navy-blue);
+    cursor: pointer;
+    margin-right: 20px;
+    z-index: 1001;
+}
+
+/* Ocultar el Sidebar al añadirle la clase 'oculto' */
+.Sidebar.oculto {
+    transform: translateX(-100%);
+}
+
+/* Ajustar el contenido principal cuando el sidebar se oculta */
+.MainContent.expandido {
+    margin-left: 0;
+    width: 100%;
+}
+
+.Sidebar, .MainContent {
+    transition: all 0.3s ease;
+}
+
 [style*="display: none"] { display: none !important; }
+
