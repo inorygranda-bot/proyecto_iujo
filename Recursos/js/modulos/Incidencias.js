@@ -123,6 +123,11 @@ function mostrarResultadoImportacion(resultado) {
         });
         html += '</ul>';
         html += '</section>';
+    } else if (resultado.ok) { // Si no hay errores y la operación fue ok
+        html += '<section class="alert alert-success mt-3">';
+        html += '<strong>Importación exitosa:</strong>';
+        html += '<p>Todos los registros fueron procesados sin errores.</p>';
+        html += '</section>';
     }
 
     contenido.innerHTML = html;
