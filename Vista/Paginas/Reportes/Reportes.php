@@ -34,13 +34,16 @@
 
         <section class="ReportesFormulario">
             <aside class="alert alert-info" role="note">
-                <strong>Formato del archivo TXT:</strong>
+                <strong>Formato del archivo TXT: codigo_empleado fecha hora nombre_empresa</strong>
             </aside>
-
             <fieldset>
                 <legend>Archivo a importar</legend>
-                <label for="input-archivo-txt">Selecciona el archivo TXT:</label>
-                <input type="file" id="input-archivo-txt" accept=".txt" class="form-control mb-3">
+                <label class="ReportesFormulario__label" for="input-archivo-txt-hidden">Selecciona el archivo TXT:</label>
+                <div class="custom-file-input-wrapper">
+                    <input type="file" id="input-archivo-txt-hidden" accept=".txt" class="d-none"> <!-- Hidden native input -->
+                    <button type="button" class="ReportesBtn ReportesBtn--secundario" id="custom-file-button">Seleccionar Archivo</button>
+                    <span id="file-name" class="file-name">Ningún archivo seleccionado</span>
+                </div>
             </fieldset>
 
             <footer>
@@ -66,9 +69,9 @@
             </section>
             <section class="d-flex gap-2">
                 <label for="asistencias-fecha-inicio" class="align-self-center">Desde:</label>
-                <input type="date" id="asistencias-fecha-inicio" class="form-control" style="width: 180px;">
+                <input type="date" id="asistencias-fecha-inicio" class="form-control">
                 <label for="asistencias-fecha-fin" class="align-self-center">Hasta:</label>
-                <input type="date" id="asistencias-fecha-fin" class="form-control" style="width: 180px;">
+                <input type="date" id="asistencias-fecha-fin" class="form-control">
                 <button onclick="cargarAsistencias()" class="ReportesBtn ReportesBtn--secundario">
                     Filtrar
                 </button>
@@ -113,9 +116,9 @@
             </section>
             <section class="d-flex gap-2">
                 <label for="inasistencias-fecha-inicio" class="align-self-center">Desde:</label>
-                <input type="date" id="inasistencias-fecha-inicio" class="form-control" style="width: 180px;">
+                <input type="date" id="inasistencias-fecha-inicio" class="form-control">
                 <label for="inasistencias-fecha-fin" class="align-self-center">Hasta:</label>
-                <input type="date" id="inasistencias-fecha-fin" class="form-control" style="width: 180px;">
+                <input type="date" id="inasistencias-fecha-fin" class="form-control">
                 <button onclick="cargarInasistencias()" class="ReportesBtn ReportesBtn--secundario">
                     Detectar Inasistencias
                 </button>
@@ -212,9 +215,9 @@
                     <section class="col-md-3">
                         <label for="reporte-formato">Formato del Reporte:</label>
                         <select id="reporte-formato" class="form-control">
-                            <option value="txt">TXT (texto formateado)</option>
-                            <option value="excel">Excel (.xls con estilos)</option>
-                            <option value="pdf">PDF (para imprimir)</option>
+                            <option value="txt">TXT</option>
+                            <option value="excel">Excel</option>
+                            <option value="pdf">PDF</option>
                         </select>
                     </section>
                     <section class="col-md-3 d-flex align-items-end">
@@ -231,9 +234,9 @@
         <aside class="alert alert-info" role="note">
                 <strong>Formatos disponibles:</strong>
                 <ul>
-                    <li><strong>TXT:</strong> Tabla con bordes, resumen del período y codificación UTF-8</li>
-                    <li><strong>Excel:</strong> Hoja con encabezados de color, filas alternadas y totales</li>
-                    <li><strong>PDF:</strong> Formato horizontal listo para imprimir o compartir</li>
+                    <li><strong>TXT</strong> </li>
+                    <li><strong>Excel</strong> </li>
+                    <li><strong>PDF</strong> </li>
                 </ul>
             </aside>
     </article>

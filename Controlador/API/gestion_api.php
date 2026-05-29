@@ -268,8 +268,6 @@ switch ($accion) {
     case 'obtener_asistencias':
         header('Content-Type: application/json'); // La respuesta será JSON.
         // Obtener las fechas de inicio y fin.
-        $fechaInicio = $_POST['fech-inicio'] ?? '';
-        $fechaFin = $_POST['fecha_fin'] ?? '';        
         $fechaInicio = $_POST['fecha_inicio'] ?? '';
         $fechaFin = $_POST['fecha_fin'] ?? '';
 
@@ -296,9 +294,7 @@ switch ($accion) {
         header('Content-Type: application/json'); // La respuesta será JSON.
         // Obtener las fechas de inicio y fin.
         $fechaInicio = $_POST['fecha_inicio'] ?? '';
-        $fechaFin = $_POST['fecha_fin'] ?? '';        
-        $fechaInicio = $_POST['fecha_inicio'] ?? '';
-        $fechaFin = $_POST['fecha_fin'] ?? '';
+        $fechaFin = $_POST['fecha_fin'] ?? '';  
 
         // Validar que las fechas no estén vacías.
         if (empty($fechaInicio) || empty($fechaFin)) {
@@ -422,7 +418,7 @@ switch ($accion) {
     case 'generar_reporte_incidencias':
         // Obtener el formato y las fechas del reporte.
         $formato = $_POST['formato'] ?? 'txt';
-        $fechaInicio = $_POST['fech-inicio'] ?? '';
+        $fechaInicio = $_POST['fecha_inicio'] ?? '';
         $fechaFin = $_POST['fecha_fin'] ?? '';
 
         // Validar que las fechas no estén vacías.

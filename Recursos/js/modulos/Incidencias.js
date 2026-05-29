@@ -11,29 +11,48 @@ var datosSistemaIncidencias = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('Módulo Incidencias inicializado');
+        console.log('Módulo Incidencias inicializado');
 
-    inicializarPestañas();
-    inicializarFormularioCrearIncidencia();
-    inicializarFormularioEditarIncidencia();
-    inicializarFormularioAsignarIncidencia();
-    await Promise.all([
-        cargarTiposIncidencia(),
-        cargarDatosSistema()
-    ]);
+        inicializarPestañas();
+        inicializarFormularioCrearIncidencia();
+        inicializarFormularioEditarIncidencia();
+        inicializarFormularioAsignarIncidencia();
+        await Promise.all([
+            cargarTiposIncidencia(),
+            cargarDatosSistema()
+        ]);
 
-    var hoy = new Date().toISOString().split('T')[0];
-    var haceUnMes = new Date();
-    haceUnMes.setMonth(haceUnMes.getMonth() - 1);
-    var haceUnMesStr = haceUnMes.toISOString().split('T')[0];
+        var hoy = new Date().toISOString().split('T')[0];
+        var haceUnMes = new Date();
+        haceUnMes.setMonth(haceUnMes.getMonth() - 1);
+        var haceUnMesStr = haceUnMes.toISOString().split('T')[0];
 
-    document.getElementById('asistencias-fecha-inicio').value = haceUnMesStr;
-    document.getElementById('asistencias-fecha-fin').value = hoy;
-    document.getElementById('inasistencias-fecha-inicio').value = haceUnMesStr;
-    document.getElementById('inasistencias-fecha-fin').value = hoy;
-    document.getElementById('reporte-fecha-inicio').value = haceUnMesStr;
-    document.getElementById('reporte-fecha-fin').value = hoy;
-});
+        document.getElementById('asistencias-fecha-inicio').value = haceUnMesStr;
+        document.getElementById('asistencias-fecha-fin').value = hoy;
+        document.getElementById('inasistencias-fecha-inicio').value = haceUnMesStr;
+        document.getElementById('inasistencias-fecha-fin').value = hoy;
+        document.getElementById('reporte-fecha-inicio').value = haceUnMesStr;
+        document.getElementById('reporte-fecha-fin').value = hoy;
+
+        // Lógica para el input de archivo personalizado
+        const fileInput = document.getElementById('input-archivo-txt-hidden');
+        const customButton = document.getElementById('custom-file-button');
+        const fileNameSpan = document.getElementById('file-name');
+
+        if (fileInput && customButton && fileNameSpan) {
+            customButton.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length > 0) {
+                    fileNameSpan.textContent = fileInput.files[0].name;
+                } else {
+                    fileNameSpan.textContent = 'Ningún archivo seleccionado';
+                }
+            });
+        }
+    });
 
 // ============================================================================
 // PESTAÑAS DE NAVEGACIÓN
@@ -78,7 +97,7 @@ function cambiarPestaña(botonActivo) {
 // ============================================================================
 
 async function importarTXT() {
-    const inputArchivo = document.getElementById('input-archivo-txt');
+    const inputArchivo = document.getElementById('input-archivo-txt-hidden');
     const archivo = inputArchivo.files[0];
 
     if (!archivo) {

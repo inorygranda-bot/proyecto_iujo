@@ -109,17 +109,27 @@
 }
 
 #Reportes .ReportesFormulario input[type="text"],
-#Reportes .ReportesFormulario input[type="number"] {
-    width: 100%;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    background: #f8fafc;
-    font-size: 1rem;
-    color: #1e293b;
-    box-sizing: border-box;
-    transition: all 0.2s;
-}
+    #Reportes .ReportesFormulario input[type="number"],
+    #Reportes .ReportesFormulario input[type="date"],
+    #Reportes .ReportesFormulario select,
+    #Reportes .ReportesFormulario .form-control {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        font-size: 1rem;
+        color: #1e293b;
+        box-sizing: border-box;
+        transition: all 0.2s;
+    }
+
+    /* Estilo específico para input type="file" */
+    #Reportes .ReportesFormulario input[type="file"].form-control {
+        padding-top: 8px;
+        padding-bottom: 8px;
+        line-height: normal; /* Para que el texto se alinee mejor */
+    }
 
 #Reportes .ReportesFormulario input:focus {
     outline: 2px solid #2c5f8d;
@@ -327,5 +337,31 @@
 }
 
 .mt-3 {
-    margin-top: 1rem !important;
-}
+        margin-top: 1rem !important;
+    }
+
+    /* Estilos para el input de archivo personalizado */
+    .d-none {
+        display: none !important;
+    }
+
+    .custom-file-input-wrapper {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 5px;
+        margin-bottom: 15px;
+    }
+
+    .file-name {
+        flex-grow: 1;
+        padding: 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 0.9rem;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
